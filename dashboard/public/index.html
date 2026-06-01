@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HackMeIfYouCan - OWASP Top 10 Practice Ground</title>
+  <link rel="stylesheet" href="style.css?v=1.0.1">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+</head>
+<body>
+  <div class="cyber-grid"></div>
+  
+  <header>
+    <div class="header-container">
+      <div class="logo-area">
+        <span class="cyber-logo">HackMe<span class="highlight">IfYouCan</span></span>
+        <span class="badge-beta">OWASP TOP 10</span>
+      </div>
+      <div class="stats-area">
+        <div class="stat-card">
+          <span class="stat-label">SOLVED</span>
+          <span class="stat-value" id="solved-stat">0 / 0</span>
+        </div>
+        <div class="progress-ring-container">
+          <div class="progress-bar-bg">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+          </div>
+          <span class="progress-percentage" id="progress-pct">0%</span>
+        </div>
+        <button id="btn-repeater" class="btn btn-secondary" style="margin-right: 0.5rem; background: rgba(0, 240, 255, 0.1); border-color: var(--primary); color: var(--primary);">API REPEATER</button>
+        <button id="btn-start-all" class="btn btn-success" style="margin-right: 0.5rem; background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success);">START ALL</button>
+        <button id="btn-stop-all" class="btn btn-warning" style="margin-right: 0.5rem; background: rgba(245, 158, 11, 0.15); border-color: var(--warning); color: var(--warning);">STOP ALL</button>
+        <button id="btn-reset" class="btn btn-danger">RESET LABS</button>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Filter Panel -->
+    <section class="filters-section">
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all">ALL CATEGORIES</button>
+        <button class="filter-btn" data-filter="A01">A01: Access Control</button>
+        <button class="filter-btn" data-filter="A02">A02: Cryptography</button>
+        <button class="filter-btn" data-filter="A03">A03: Injection</button>
+        <button class="filter-btn" data-filter="A04">A04: Insecure Design</button>
+        <button class="filter-btn" data-filter="A05">A05: Misconfiguration</button>
+        <button class="filter-btn" data-filter="A06">A06: Outdated Deps</button>
+        <button class="filter-btn" data-filter="A07">A07: Auth Failures</button>
+        <button class="filter-btn" data-filter="A08">A08: Deserialization</button>
+        <button class="filter-btn" data-filter="A09">A09: Logging Failure</button>
+        <button class="filter-btn" data-filter="A10">A10: SSRF</button>
+      </div>
+      
+      <div class="search-group">
+        <input type="text" id="search-input" placeholder="Search challenges by name or keyword...">
+      </div>
+    </section>
+
+    <!-- Difficulty Filter Panel -->
+    <section class="filters-section difficulty-filters-section" style="margin-top: -1rem; margin-bottom: 1.5rem;">
+      <div class="filter-group difficulty-filters">
+        <span class="filter-label" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); align-self: center; margin-right: 0.5rem; text-transform: uppercase;">Difficulty:</span>
+        <button class="filter-btn active" data-difficulty="all">ALL</button>
+        <button class="filter-btn" data-difficulty="easy" style="border-left: 3px solid var(--success);">EASY</button>
+        <button class="filter-btn" data-difficulty="medium" style="border-left: 3px solid var(--warning);">MEDIUM</button>
+        <button class="filter-btn" data-difficulty="hard" style="border-left: 3px solid var(--danger);">HARD</button>
+        <button class="filter-btn" data-difficulty="expert" style="border-left: 3px solid #a855f7;">EXPERT</button>
+      </div>
+    </section>
+
+    <!-- Lab Grid -->
+    <section class="labs-grid" id="labs-grid">
+      <!-- Cards will be dynamically injected here -->
+      <div class="loading">Loading training environment data...</div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-container">
+      <p>HackMeIfYouCan Security Assessment Training Ground &copy; 2026. Authorized security testing only.</p>
+    </div>
+  </footer>
+
+  <!-- Mini-Burp Repeater Modal -->
+  <div id="repeater-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><span class="terminal-prompt">aino@hackmeifyoucan:~#</span> MINI-BURP REPEATER</h2>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="repeater-grid">
+          <!-- Request Panel -->
+          <div class="panel request-panel">
+            <div class="panel-header">REQUEST CONFIGURATION</div>
+            <div class="panel-body">
+              <div class="form-row">
+                <select id="req-method" class="form-select">
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="DELETE">DELETE</option>
+                  <option value="PATCH">PATCH</option>
+                </select>
+                <input type="text" id="req-url" class="form-input" placeholder="http://localhost:30017/api/cors">
+                <button id="req-send-btn" class="btn btn-primary btn-glow">SEND</button>
+              </div>
+              <div class="textarea-container">
+                <label for="req-headers">Headers (Key: Value - One per line)</label>
+                <textarea id="req-headers" class="code-textarea" placeholder="Host: localhost:30017&#10;Content-Type: application/json&#10;Origin: http://evil.com"></textarea>
+              </div>
+              <div class="textarea-container">
+                <label for="req-body">Request Body</label>
+                <textarea id="req-body" class="code-textarea" placeholder='{"username": "admin", "password": "password"}'></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Response Panel -->
+          <div class="panel response-panel">
+            <div class="panel-header">
+              <span>RESPONSE STREAM</span>
+              <span id="resp-status" class="resp-status-badge">N/A</span>
+            </div>
+            <div class="panel-body">
+              <div class="response-meta-row">
+                <span>TIME: <span id="resp-time" class="highlight-val">0ms</span></span>
+              </div>
+              <div class="textarea-container">
+                <label>Response Headers</label>
+                <pre id="resp-headers" class="code-view">No response yet.</pre>
+              </div>
+              <div class="textarea-container">
+                <label>Response Body</label>
+                <pre id="resp-body" class="code-view">No response yet.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web Console Terminal Modal -->
+  <div id="console-modal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header" style="background: #090d16; border-bottom: 1px solid var(--success);">
+        <h2><span class="terminal-prompt" style="color: var(--success);">root@hackmeifyoucan:~#</span> WEB SHELL CONSOLE - <span id="console-title" style="color: var(--text-bright);">lab_a01_idor</span></h2>
+        <button id="console-close" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="background: #000; padding: 1rem;">
+        <div id="terminal-container"></div>
+      </div>
+      <div class="panel-header" style="background: #05080f; border-top: 1px solid var(--border-color); padding: 0.5rem 1rem; color: var(--text-muted); font-size: 0.75rem;">
+        Interactive post-exploitation environment. Type commands directly. Terminate session by typing 'exit' or closing the modal.
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="notification" class="notification"></div>
+
+  <script src="app.js?v=1.0.1"></script>
+</body>
+</html>

@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuantumTech - Advanced Path Traversal Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #000000;
+      --panel-bg: rgba(12, 12, 12, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-glow: none;
+      --accent: #10b981;
+      --accent-glow: none;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      font-size: 20px;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #030712;
+      box-shadow: none;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--primary), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .patch-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 16px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .patch-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .shield-badge {
+      font-size: 0.7rem;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .shield-vulnerable {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .shield-secure {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      box-shadow: none;
+    }
+
+    .patch-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 22px;
+    }
+
+    .patch-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #374151;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #fff;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--success);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    .container {
+      max-width: 95%;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      flex-grow: 1;
+      width: 100%;
+    }
+
+    aside {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: rgba(56, 189, 248, 0.2);
+      color: var(--primary);
+    }
+
+    .workspace {
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      min-height: 500px;
+    }
+
+    .tab-view {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .tab-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    .layout-split {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .panel {
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.2);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input, select {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--primary);
+      color: #030712;
+      border: 1px solid var(--primary);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: transparent;
+      color: var(--primary);
+      box-shadow: none;
+    }
+
+    .btn-verify {
+      background: rgba(168, 85, 247, 0.2);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-verify:hover {
+      background: var(--accent);
+      color: #030712;
+      box-shadow: none;
+    }
+
+    .terminal-panel {
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 400px;
+    }
+
+    .terminal-header {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .terminal-body {
+      flex-grow: 1;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 20px;
+      color: #00ff66;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-y: auto;
+      max-height: 500px;
+      line-height: 1.4;
+    
+    }
+
+    .verifier-box {
+      margin-top: 1rem;
+      border-top: 1px dashed var(--glass-border);
+      padding-top: 1rem;
+    }
+
+    .verifier-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .verification-status {
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-solved {
+      color: var(--success);
+      text-shadow: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-easy { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-medium { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-hard { background: rgba(168, 85, 247, 0.1); color: var(--accent); border: 1px solid rgba(168, 85, 247, 0.2); }
+    .badge-expert { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+    pre {
+      background: rgba(3, 7, 18, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+
+    .theory-section {
+      margin-bottom: 2rem;
+    }
+
+    .theory-section h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .theory-section p {
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .alert {
+      background: rgba(56, 189, 248, 0.05);
+      border-left: 4px solid var(--primary);
+      padding: 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+    }
+
+    .alert h4 {
+      color: #fff;
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .alert p {
+      font-size: 0.85rem;
+    }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  
+
+
+
+/* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
+.hm-converted-container {
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  flex-grow: 1;
+  width: 100%;
+}
+.hm-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hm-sidebar .nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hm-sidebar .nav-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.hm-sidebar .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text, #f3f4f6);
+}
+.hm-sidebar .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+.hm-sidebar .nav-item .solve-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hm-sidebar .nav-item .solve-tag.solved { color: var(--success, #10b981); }
+.hm-sidebar .nav-item .solve-tag.unsolved { color: #f87171; }
+.hm-workspace {
+  background: var(--panel-bg, rgba(12, 12, 12, 0.95));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 500px;
+}
+/* Patch control (reference style) */
+.hm-patch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.hm-patch-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+}
+.hm-shield-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.hm-shield-vulnerable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.hm-shield-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.hm-patch-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.hm-patch-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.hm-patch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 34px;
+}
+.hm-patch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.hm-patch-switch input:checked + .hm-patch-slider {
+  background-color: var(--success, #10b981);
+}
+.hm-patch-switch input:checked + .hm-patch-slider:before {
+  transform: translateX(22px);
+}
+
+/* Header fixes */
+header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, var(--primary, #10b981), var(--accent, #10b981)) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+}
+.brand-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to right, var(--primary, #10b981), #fff) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hide old layout elements that get replaced by JS */
+body.hm-converted main,
+body.hm-converted > .container { display: none !important; }
+/* But show the new container */
+body.hm-converted .hm-converted-container { display: grid !important; }
+
+/* Hide old shield buttons when converted */
+body.hm-converted .shield-btn { display: none !important; }
+body.hm-converted header > .shield-btn { display: none !important; }
+
+/* Responsive: sidebar collapses on small screens */
+@media (max-width: 1024px) {
+  .hm-converted-container {
+    grid-template-columns: 1fr !important;
+    margin: 1rem auto !important;
+  }
+  .hm-sidebar {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+  .hm-sidebar::before {
+    content: "\2630  Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary, #10b981) !important;
+    text-align: center !important;
+  }
+  .hm-sidebar .nav-list {
+    display: none !important;
+  }
+  .hm-sidebar.active-menu .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #000000 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    gap: 6px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">HM</div>
+      <div class="brand-title">HackMeIfYouCan Portal</div>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="patch-control">
+        <div class="patch-label">REMEDIATION SHIELD</div>
+        <div id="shield-indicator" class="shield-badge shield-vulnerable">VULNERABLE</div>
+        <label class="patch-switch">
+          <input type="checkbox" id="security-mode-checkbox" onchange="toggleSecurityMode()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      
+      <span class="badge badge-hard">OWASP LAB 2</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <aside>
+      <ul class="nav-list">
+        <li class="nav-item active" id="tab-theory" onclick="switchTab('theory')">Theory and Concepts</li>
+        <li class="nav-item" id="tab-stage1" onclick="switchTab('stage1')">Stage 1: Basic Traversal</li>
+        <li class="nav-item" id="tab-stage2" onclick="switchTab('stage2')">Stage 2: Stripped Delimiters</li>
+        <li class="nav-item" id="tab-stage3" onclick="switchTab('stage3')">Stage 3: Suffix Null Byte</li>
+        <li class="nav-item" id="tab-stage4" onclick="switchTab('stage4')">Stage 4: Directory Lockout</li>
+      </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- VIEW: Vulnerability Theory -->
+      <div class="tab-view active" id="view-theory">
+        <h2>Path Traversal (LFI) Access Manual</h2>
+        <p class="subtitle">Deep Dive: Relative Traversal, Suffix Bypass, and Directory startsWith Bypass Patterns</p>
+        
+        <div class="theory-section">
+          <h3>Core Vulnerability Concept</h3>
+          <p>Directory path traversal (also known as Local File Inclusion) enables attackers to read arbitrary files on the local filesystem of the application server. This is accomplished by manipulating file references in query parameters using relative folder traversal segments (../../).</p>
+        </div>
+
+        <div class="alert">
+          <h4>Real-World Vulnerability Analogy</h4>
+          <p>HackMeIfYouCan Academy outlines multiple filter bypass strategies. When developers implement filters to remove relative paths like `../`, they often fail to run them recursively. This allows attackers to nest directories like `....//` to successfully escape sandbox limits.</p>
+        </div>
+
+        <div class="grid-two">
+          <div class="panel">
+            <div class="panel-header">Vulnerable Node.js implementation</div>
+            <pre><code>// VULNERABLE File view controller
+app.get('/api/view', (req, res) => {
+  const { file } = req.query;
+  const target = path.join(__dirname, 'public', file);
+  fs.readFile(target, 'utf8', (err, data) => {
+    res.send(data);
+  });
+});</code></pre>
+          </div>
+          <div class="panel">
+            <div class="panel-header">Secure Remediation Model</div>
+            <pre><code>// SECURE Bound Verification
+app.get('/api/view', (req, res) => {
+  const { file } = req.query;
+  const safeBase = path.resolve(__dirname, 'public');
+  const target = path.resolve(safeBase, file);
+  
+  if (!target.startsWith(safeBase)) {
+    return res.status(403).send("Forbidden");
+  }
+  fs.readFile(target, 'utf8', (err, data) => { ... });
+});</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: Stage 1 -->
+      <div class="tab-view" id="view-stage1">
+        <h2>Stage 1: Basic Path Traversal</h2>
+        <p class="subtitle">Query arbitrary files outside public document root directories using direct traversal parameters.</p>
+        
+        <div class="layout-split">
+          <div class="panel">
+            <div class="panel-header">Document Viewer Console</div>
+            <div class="form-group">
+              <label for="stage1-file">Target File Parameter</label>
+              <input type="text" id="stage1-file" value="welcome.txt">
+            </div>
+            <button class="btn" onclick="testStage1()">Read File</button>
+
+            <!-- Integrated Stage Flag Verifier -->
+            <div class="verifier-box">
+              <div class="panel-header" style="color: var(--accent);">Flag Verification</div>
+              <div class="verifier-row">
+                <input type="text" id="stage1-flag-input" placeholder="Paste captured Flag here...">
+                <button class="btn btn-verify" style="width: auto;" onclick="verifyStageFlag(1)">Verify</button>
+              </div>
+              <div class="verification-status" id="stage1-status-msg">Not Solved</div>
+            </div>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <span>HTTP REQUEST HISTORY MONITOR</span>
+              <span style="color: var(--primary);">CONSOLE_LOGGER</span>
+            </div>
+            <div class="terminal-body" id="stage1-terminal">Console is ready. Click "Read File" to inspect the raw connection exchange.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: Stage 2 -->
+      <div class="tab-view" id="view-stage2">
+        <h2>Stage 2: Stripped Traversal Sequences Bypass</h2>
+        <p class="subtitle">The backend strips standard relative segments non-recursively. Bypass this check by nesting delimiters like ....// so that the filter outputs a valid relative traversal payload.</p>
+        
+        <div class="layout-split">
+          <div class="panel">
+            <div class="panel-header">Sanitizer Bypass Console</div>
+            <div class="form-group">
+              <label for="stage2-file">Target File Parameter</label>
+              <input type="text" id="stage2-file" value="welcome.txt">
+            </div>
+            <button class="btn" onclick="testStage2()">Read File</button>
+
+            <!-- Integrated Stage Flag Verifier -->
+            <div class="verifier-box">
+              <div class="panel-header" style="color: var(--accent);">Flag Verification</div>
+              <div class="verifier-row">
+                <input type="text" id="stage2-flag-input" placeholder="Paste captured Flag here...">
+                <button class="btn btn-verify" style="width: auto;" onclick="verifyStageFlag(2)">Verify</button>
+              </div>
+              <div class="verification-status" id="stage2-status-msg">Not Solved</div>
+            </div>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <span>HTTP REQUEST HISTORY MONITOR</span>
+              <span style="color: var(--primary);">CONSOLE_LOGGER</span>
+            </div>
+            <div class="terminal-body" id="stage2-terminal">Awaiting query execution...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: Stage 3 -->
+      <div class="tab-view" id="view-stage3">
+        <h2>Stage 3: File Suffix and Null Byte Bypass</h2>
+        <p class="subtitle">The application verifies file suffix format to prevent viewing non-PDF targets, but terminates evaluation at URL null bytes (%00) when loaded at filesystem level.</p>
+        
+        <div class="layout-split">
+          <div class="panel">
+            <div class="panel-header">Suffix Bypass Console</div>
+            <div class="form-group">
+              <label for="stage3-file">Target File Parameter</label>
+              <input type="text" id="stage3-file" value="invoice.pdf">
+            </div>
+            <button class="btn" onclick="testStage3()">Read File</button>
+
+            <!-- Integrated Stage Flag Verifier -->
+            <div class="verifier-box">
+              <div class="panel-header" style="color: var(--accent);">Flag Verification</div>
+              <div class="verifier-row">
+                <input type="text" id="stage3-flag-input" placeholder="Paste captured Flag here...">
+                <button class="btn btn-verify" style="width: auto;" onclick="verifyStageFlag(3)">Verify</button>
+              </div>
+              <div class="verification-status" id="stage3-status-msg">Not Solved</div>
+            </div>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <span>HTTP REQUEST HISTORY MONITOR</span>
+              <span style="color: var(--primary);">CONSOLE_LOGGER</span>
+            </div>
+            <div class="terminal-body" id="stage3-terminal">Awaiting connection scans...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: Stage 4 -->
+      <div class="tab-view" id="view-stage4">
+        <h2>Stage 4: Directory Suffix Validation Bypass</h2>
+        <p class="subtitle">The validation module checks if the query starts with the assets/ directory, but resolves relative traverses from that index. Escape directory locking by prepending the required folder context.</p>
+        
+        <div class="layout-split">
+          <div class="panel">
+            <div class="panel-header">Directory Lock Console</div>
+            <div class="form-group">
+              <label for="stage4-file">Target File Parameter</label>
+              <input type="text" id="stage4-file" value="assets/welcome.txt">
+            </div>
+            <button class="btn" onclick="testStage4()">Read File</button>
+
+            <!-- Integrated Stage Flag Verifier -->
+            <div class="verifier-box">
+              <div class="panel-header" style="color: var(--accent);">Flag Verification</div>
+              <div class="verifier-row">
+                <input type="text" id="stage4-flag-input" placeholder="Paste captured Flag here...">
+                <button class="btn btn-verify" style="width: auto;" onclick="verifyStageFlag(4)">Verify</button>
+              </div>
+              <div class="verification-status" id="stage4-status-msg">Not Solved</div>
+            </div>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <span>HTTP REQUEST HISTORY MONITOR</span>
+              <span style="color: var(--primary);">CONSOLE_LOGGER</span>
+            </div>
+            <div class="terminal-body" id="stage4-terminal">Awaiting directory query execution...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const FLAGS = {
+      1: "FLAG{local_file_inclusion_secret}",
+      2: "FLAG{path_traversal_stripped_sequences_medium}",
+      3: "FLAG{path_traversal_null_byte_bypass_hard}",
+      4: "FLAG{path_traversal_directory_lock_bypass_expert}"
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      syncSecurityMode();
+      loadProgress();
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+      
+      const clickedItem = document.getElementById('tab-' + tabId);
+      if (clickedItem) clickedItem.classList.add('active');
+      
+      const activeView = document.getElementById('view-' + tabId);
+      if (activeView) activeView.classList.add('active');
+    }
+
+    function logHTTP(stageId, method, url, requestHeaders, requestBody, status, statusText, responseHeaders, responseBody) {
+      const term = document.getElementById(`stage${stageId}-terminal`);
+      if (!term) return;
+
+      let reqHeadersStr = "";
+      for (const [key, val] of Object.entries(requestHeaders)) {
+        reqHeadersStr += `${key}: ${val}\n`;
+      }
+
+      let resHeadersStr = "";
+      for (const [key, val] of Object.entries(responseHeaders)) {
+        resHeadersStr += `${key}: ${val}\n`;
+      }
+
+      let logText = `>>> CONNECTING TO ${url}\n`;
+      logText += `${method} ${url} HTTP/1.1\n`;
+      logText += reqHeadersStr;
+      if (requestBody) {
+        logText += `\n${typeof requestBody === 'object' ? JSON.stringify(requestBody, null, 2) : requestBody}\n`;
+      }
+      logText += `\n--------------------------------------------------\n`;
+      logText += `<<< HTTP/1.1 ${status} ${statusText}\n`;
+      logText += resHeadersStr;
+      logText += `\n${typeof responseBody === 'object' ? JSON.stringify(responseBody, null, 2) : responseBody}\n`;
+
+      term.innerText = logText;
+      term.scrollTop = term.scrollHeight;
+    }
+
+    async function syncSecurityMode() {
+      try {
+        const res = await fetch('/api/settings/security-mode');
+        const data = await res.json();
+        const checkbox = document.getElementById('security-mode-checkbox');
+        const indicator = document.getElementById('shield-indicator');
+        
+        if (data.securityMode === 'secure') {
+          checkbox.checked = true;
+          indicator.innerText = "SECURE";
+          indicator.className = "shield-badge shield-secure";
+        } else {
+          checkbox.checked = false;
+          indicator.innerText = "VULNERABLE";
+          indicator.className = "shield-badge shield-vulnerable";
+        }
+      } catch (err) {
+        console.error("Error syncing security mode:", err);
+      }
+    }
+
+    async function toggleSecurityMode() {
+      const checkbox = document.getElementById('security-mode-checkbox');
+      const targetMode = checkbox.checked ? 'secure' : 'vulnerable';
+      
+      try {
+        const res = await fetch('/api/settings/security-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: targetMode })
+        });
+        const data = await res.json();
+        syncSecurityMode();
+      } catch (err) {
+        console.error("Error setting security mode:", err);
+      }
+    }
+
+    function verifyStageFlag(stageId) {
+      const input = document.getElementById(`stage${stageId}-flag-input`).value.trim();
+      const statusMsg = document.getElementById(`stage${stageId}-status-msg`);
+      
+      if (input === FLAGS[stageId]) {
+        statusMsg.innerText = "SOLVED";
+        statusMsg.className = "verification-status status-solved";
+        saveProgress(stageId);
+      } else {
+        statusMsg.innerText = "INCORRECT FLAG";
+        statusMsg.className = "verification-status";
+        statusMsg.style.color = "var(--danger)";
+      }
+    }
+
+    function saveProgress(stageId) {
+      localStorage.setItem(`stage_pt_${stageId}_solved`, "true");
+    }
+
+    function loadProgress() {
+      for (let i = 1; i <= 4; i++) {
+        if (localStorage.getItem(`stage_pt_${i}_solved`) === "true") {
+          const statusMsg = document.getElementById(`stage${i}-status-msg`);
+          if (statusMsg) {
+            statusMsg.innerText = "SOLVED";
+            statusMsg.className = "verification-status status-solved";
+          }
+        }
+      }
+    }
+
+    // Stage Action Runners
+    async function testStage1() {
+      const file = document.getElementById('stage1-file').value.trim();
+      if (!file) return;
+      
+      const headers = { 'Accept': 'text/plain' };
+      const url = `/api/view?file=${encodeURIComponent(file)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.text();
+        
+        const resHeaders = {
+          'Content-Type': res.headers.get('content-type') || 'text/plain',
+          'X-Powered-By': 'Express'
+        };
+
+        logHTTP(1, "GET", url, headers, null, res.status, res.statusText, resHeaders, data);
+      } catch (err) {
+        document.getElementById('stage1-terminal').innerText = "Connection failed.";
+      }
+    }
+
+    async function testStage2() {
+      const file = document.getElementById('stage2-file').value.trim();
+      if (!file) return;
+      
+      const headers = { 'Accept': 'text/plain' };
+      const url = `/api/stage2/view?file=${encodeURIComponent(file)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.text();
+        
+        const resHeaders = {
+          'Content-Type': res.headers.get('content-type') || 'text/plain',
+          'X-Powered-By': 'Express'
+        };
+
+        logHTTP(2, "GET", url, headers, null, res.status, res.statusText, resHeaders, data);
+      } catch (err) {
+        document.getElementById('stage2-terminal').innerText = "Connection failed.";
+      }
+    }
+
+    async function testStage3() {
+      const file = document.getElementById('stage3-file').value.trim();
+      if (!file) return;
+      
+      const headers = { 'Accept': 'text/plain' };
+      const url = `/api/stage3/view?file=${encodeURIComponent(file)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.text();
+        
+        const resHeaders = {
+          'Content-Type': res.headers.get('content-type') || 'text/plain',
+          'X-Powered-By': 'Express'
+        };
+
+        logHTTP(3, "GET", url, headers, null, res.status, res.statusText, resHeaders, data);
+      } catch (err) {
+        document.getElementById('stage3-terminal').innerText = "Connection failed.";
+      }
+    }
+
+    async function testStage4() {
+      const file = document.getElementById('stage4-file').value.trim();
+      if (!file) return;
+      
+      const headers = { 'Accept': 'text/plain' };
+      const url = `/api/stage4/view?file=${encodeURIComponent(file)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.text();
+        
+        const resHeaders = {
+          'Content-Type': res.headers.get('content-type') || 'text/plain',
+          'X-Powered-By': 'Express'
+        };
+
+        logHTTP(4, "GET", url, headers, null, res.status, res.statusText, resHeaders, data);
+      } catch (err) {
+        document.getElementById('stage4-terminal').innerText = "Connection failed.";
+      }
+    }
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 1. Fix branding ──
+  var brandIcon = document.querySelector('.brand-icon');
+  if (brandIcon && !brandIcon.textContent.trim()) brandIcon.textContent = 'HM';
+
+  var brand = document.querySelector('.brand');
+  if (brand && !brand.querySelector('.brand-title')) {
+    Array.from(brand.childNodes).forEach(function(n) {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = '';
+    });
+    var titleEl = document.createElement('div');
+    titleEl.className = 'brand-title';
+    titleEl.textContent = 'HackMeIfYouCan Portal';
+    titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
+    brand.appendChild(titleEl);
+  }
+
+  // ── 2. Detect layout type ──
+  var nativeAside = document.querySelector('aside');
+  var stageCards = document.querySelectorAll('.stage-card');
+  var stageBtns = document.querySelectorAll('.stage-btn');
+  var stages = stageCards.length > 0 ? stageCards : stageBtns;
+  var hasNativeSidebar = nativeAside && nativeAside.querySelector('.nav-list');
+
+  if (!hasNativeSidebar && stages.length === 0) return; // single-card lab, skip
+
+  // ── 3. Replace shield button with checkbox toggle ──
+  var oldShield = document.getElementById('shieldBtn') || document.querySelector('.shield-btn');
+  var headerEl = document.querySelector('header');
+  
+  // Check if header already has proper patch-control with checkbox
+  var existingPatch = headerEl ? headerEl.querySelector('.patch-control') : null;
+  var existingCheckbox = existingPatch ? existingPatch.querySelector('input[type="checkbox"]') : null;
+  
+  if (headerEl && !existingCheckbox) {
+    var patchControl = document.createElement('div');
+    patchControl.className = 'hm-patch-control';
+    patchControl.innerHTML = '<div class="hm-patch-label">REMEDIATION SHIELD</div>' +
+      '<div id="hm-shield-indicator" class="hm-shield-badge hm-shield-vulnerable">VULNERABLE</div>' +
+      '<label class="hm-patch-switch"><input type="checkbox" id="hm-security-checkbox"><span class="hm-patch-slider"></span></label>';
+
+    if (oldShield && oldShield.parentNode) {
+      oldShield.parentNode.replaceChild(patchControl, oldShield);
+    } else if (existingPatch) {
+      existingPatch.parentNode.replaceChild(patchControl, existingPatch);
+    } else {
+      headerEl.appendChild(patchControl);
+    }
+
+    var hmCheckbox = document.getElementById('hm-security-checkbox');
+    var hmIndicator = document.getElementById('hm-shield-indicator');
+
+    function hmSyncShield() {
+      fetch('/api/settings/security-mode')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.securityMode === 'secure') {
+            hmCheckbox.checked = true;
+            hmIndicator.textContent = 'SECURE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-secure';
+          } else {
+            hmCheckbox.checked = false;
+            hmIndicator.textContent = 'VULNERABLE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-vulnerable';
+          }
+        }).catch(function(){});
+    }
+
+    hmCheckbox.addEventListener('change', function() {
+      var mode = hmCheckbox.checked ? 'secure' : 'vulnerable';
+      fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).then(function() { hmSyncShield(); }).catch(function(){});
+    });
+
+    hmSyncShield();
+  } else if (existingCheckbox) {
+    // Existing patch control with checkbox — just hide old shield-btn if separate
+    if (oldShield && oldShield !== existingPatch) oldShield.style.display = 'none';
+    // Hide extra elements in header (badges etc) — keep only brand + patch
+    var headerChildren = headerEl.children;
+    for (var i = 0; i < headerChildren.length; i++) {
+      var child = headerChildren[i];
+      if (!child.classList.contains('brand') && !child.classList.contains('patch-control') &&
+          !child.classList.contains('hm-patch-control') && !child.querySelector('.patch-control')) {
+        // Hide extra divs that wrap badge + patch-control
+        if (child.querySelector('.patch-control')) continue;
+        if (child.classList.contains('badge')) child.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Build unified sidebar ──
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'hm-sidebar';
+  var navList = document.createElement('ul');
+  navList.className = 'nav-list';
+
+  if (hasNativeSidebar) {
+    // NATIVE: Convert existing nav-items
+    var existingNavItems = nativeAside.querySelectorAll('.nav-item');
+    existingNavItems.forEach(function(item, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (item.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      li.textContent = item.textContent.trim();
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        item.click(); // trigger original
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  } else {
+    // CONVERTED: Build from stage-cards/buttons
+    stages.forEach(function(stage, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (stage.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      var nameEl = stage.querySelector('.stage-name') || stage.querySelector('span:first-child');
+      var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+      var name = nameEl ? nameEl.textContent.trim() : ('Stage ' + (idx + 1));
+      var statusText = statusEl ? statusEl.textContent.trim() : 'UNSOLVED';
+      var isSolved = statusText.toUpperCase() === 'SOLVED';
+      li.innerHTML = name + '<span class="solve-tag ' + (isSolved ? 'solved' : 'unsolved') + '">' + statusText + '</span>';
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        stage.click();
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  }
+
+  sidebar.appendChild(navList);
+  sidebar.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && e.target === sidebar) {
+      sidebar.classList.toggle('active-menu');
+    }
+  });
+
+  // ── 5. Build workspace ──
+  var workspace = document.createElement('div');
+  workspace.className = 'hm-workspace';
+
+  if (hasNativeSidebar) {
+    // NATIVE: move the existing workspace/main content
+    var existingWorkspace = document.querySelector('.workspace') || document.querySelector('main');
+    if (existingWorkspace) {
+      // Clone all children into new workspace
+      while (existingWorkspace.firstChild) {
+        workspace.appendChild(existingWorkspace.firstChild);
+      }
+    }
+  } else {
+    // CONVERTED: gather panels
+    var mainEl = document.querySelector('main');
+    var containerEl = mainEl || document.querySelector('.container');
+    if (containerEl) {
+      var panels = containerEl.querySelectorAll('.panel, .logger-panel');
+      panels.forEach(function(panel) {
+        var clone = panel.cloneNode(true);
+        var sg = clone.querySelector('.stages-grid');
+        if (sg) sg.remove();
+        var sh = clone.querySelector('.stages-header');
+        if (sh) sh.remove();
+        var ss = clone.querySelector('.stage-selector');
+        if (ss) ss.remove();
+        workspace.appendChild(clone);
+      });
+      if (workspace.children.length === 0) {
+        Array.from(containerEl.children).forEach(function(child) {
+          if (child.tagName !== 'HEADER') workspace.appendChild(child.cloneNode(true));
+        });
+      }
+    }
+  }
+
+  // ── 6. Insert new layout ──
+  var newContainer = document.createElement('div');
+  newContainer.className = 'hm-converted-container';
+  newContainer.appendChild(sidebar);
+  newContainer.appendChild(workspace);
+
+  document.body.classList.add('hm-converted');
+
+  if (headerEl && headerEl.nextSibling) {
+    headerEl.parentNode.insertBefore(newContainer, headerEl.nextSibling);
+  } else {
+    document.body.appendChild(newContainer);
+  }
+
+  // ── 7. Observer for solve status sync ──
+  if (!hasNativeSidebar && stages.length > 0) {
+    var observer = new MutationObserver(function() {
+      stages.forEach(function(stage, idx) {
+        var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+        if (statusEl) {
+          var navItem = navList.querySelector('[data-stage-idx="' + idx + '"]');
+          if (navItem) {
+            var tag = navItem.querySelector('.solve-tag');
+            if (tag) {
+              var txt = statusEl.textContent.trim();
+              tag.textContent = txt;
+              tag.className = 'solve-tag ' + (txt.toUpperCase() === 'SOLVED' ? 'solved' : 'unsolved');
+            }
+          }
+        }
+      });
+    });
+    stages.forEach(function(stage) {
+      observer.observe(stage, { attributes: true, childList: true, subtree: true });
+    });
+  }
+})();
+</script>
+
+</body>
+
+</html>

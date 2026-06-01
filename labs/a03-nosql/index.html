@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CyberLabs - NoSQL Operator Injection</title>
+  <style>
+    body { background-color: #000000; color: #c5c6c7; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;
+      font-size: 20px;
+    }
+    .card { background-color: #1f2833; border: 1px solid #45f3ff; border-radius: 8px; padding: 2rem; width: 360px; box-shadow: none; }
+    h2 { color: #66fcf1; text-align: center; margin-top: 0; }
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; margin-bottom: 0.4rem; font-size: 0.85rem; color: #66fcf1; }
+    input { width: 100%; padding: 0.5rem; background: #0b0c10; border: 1px solid #45f3ff; border-radius: 4px; color: #fff; box-sizing: border-box; }
+    button { width: 100%; padding: 0.6rem; background: #66fcf1; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #45f3ff; box-shadow: none; }
+    .msg { margin-top: 1rem; font-size: 0.85rem; text-align: center; }
+    .success { color: #2ecc71; }
+    .error { color: #e74c3c; }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>OPERATOR AUTHENTICATOR</h2>
+    <p style="font-size:0.75rem; color:#8892b0; margin-bottom: 1.5rem; text-align:center;">This login endpoint queries a non-relational database directly using query inputs. Bypass authorization to retrieve the flag.</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" required placeholder="operator">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" required placeholder="password">
+      </div>
+      <button type="submit">LOGIN</button>
+    </form>
+    <div id="message" class="msg"></div>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      let usernameVal = document.getElementById('username').value;
+      let passwordVal = document.getElementById('password').value;
+      const msgDiv = document.getElementById('message');
+      msgDiv.innerHTML = 'Authenticating...';
+      
+      let payload = { username: usernameVal, password: passwordVal };
+      
+      // Check if user submitted custom JSON format (like through Burp / Repeater)
+      try {
+        if (usernameVal.trim().startsWith('{') || passwordVal.trim().startsWith('{')) {
+          payload = {
+            username: usernameVal.trim().startsWith('{') ? JSON.parse(usernameVal) : usernameVal,
+            password: passwordVal.trim().startsWith('{') ? JSON.parse(passwordVal) : passwordVal
+          };
+        }
+      } catch(err) {}
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          msgDiv.className = 'msg success';
+          msgDiv.innerHTML = `<strong>${data.message}</strong><br><br>Flag: <code style="color:#fff;">${data.flag}</code>`;
+        } else {
+          msgDiv.className = 'msg error';
+          msgDiv.innerText = data.error;
+        }
+      } catch (err) {
+        msgDiv.className = 'msg error';
+        msgDiv.innerText = 'Failed to reach service.';
+      }
+    });
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

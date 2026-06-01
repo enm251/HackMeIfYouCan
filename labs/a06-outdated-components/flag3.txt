@@ -1,0 +1,1 @@
+FLAG{ejs_blind_prototype_pollution}

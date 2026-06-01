@@ -1,0 +1,1368 @@
+import threading
+import socket
+import json
+import os
+import time
+from flask import Flask, request, jsonify, render_template_string
+import requests
+import urllib.parse
+
+# State
+security_mode = 'vulnerable'
+logs = []
+MAX_LOGS = 100
+
+def add_log(method, path, status_code):
+    global logs, security_mode
+    logs.append({
+        "id": len(logs) + 1,
+        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        "method": method,
+        "path": path,
+        "statusCode": status_code,
+        "duration": f"{time.perf_counter() * 1000 % 30:.1f}ms",
+        "ip": request.remote_addr,
+        "securityMode": security_mode
+    })
+    if len(logs) > MAX_LOGS:
+        logs.pop(0)
+
+# --- 1. Internal Administrative service (Port 8000) ---
+internal_app = Flask("InternalApp")
+
+@internal_app.route('/flag')
+def get_flag():
+    # Detect the stage requested via custom headers or query params
+    # Default to stage 1
+    stage = request.headers.get('X-Stage') or request.args.get('stage') or '1'
+    
+    if stage == '2':
+        return jsonify({"success": True, "flag": "FLAG{ssrf_dns_rebinding_bypass}"})
+    elif stage == '3':
+        return jsonify({"success": True, "flag": "FLAG{ssrf_ipv6_bracket_bypass}"})
+    elif stage == '4':
+        return jsonify({"success": True, "flag": "FLAG{ssrf_unicode_idn_normalization_expert}"})
+    
+    return jsonify({"success": True, "flag": "FLAG{ssrf_blacklist_bypass_secret}"})
+
+def run_internal():
+    internal_app.run(host='127.0.0.1', port=8000, debug=False, use_reloader=False)
+
+threading.Thread(target=run_internal, daemon=True).start()
+
+# --- 2. Public Content Proxy service (Port 3000) ---
+public_app = Flask("PublicApp")
+
+# Security Mode & Logger APIs
+@public_app.route('/api/settings/security-mode', methods=['GET', 'POST'])
+def api_security_mode():
+    global security_mode
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        mode = data.get('mode')
+        if mode in ['secure', 'vulnerable']:
+            security_mode = mode
+            return jsonify({"success": True, "securityMode": security_mode})
+        return jsonify({"error": "Invalid mode"}), 400
+    return jsonify({"securityMode": security_mode})
+
+@public_app.route('/api/logs', methods=['GET'])
+def api_logs():
+    return jsonify({"logs": logs})
+
+@public_app.route('/api/logs/clear', methods=['POST'])
+def api_logs_clear():
+    global logs
+    logs = []
+    return jsonify({"success": True})
+
+# Dynamic Dashboard HTML Template
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSRF DNS & Blacklist Bypass Laboratory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #000000;
+      --panel-bg: rgba(12, 12, 12, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-glow: none;
+      --accent: #10b981;
+      --success: #10b981;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      font-size: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(17, 24, 39, 0.4);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 6px;
+    }
+
+    .shield-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .shield-btn.secure {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      padding: 2rem;
+      gap: 2rem;
+      max-width: 1600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .stages-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stages-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+
+    .stage-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .stage-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .stage-card.active {
+      background: var(--primary-glow);
+      border-color: var(--primary);
+    }
+
+    .stage-num {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .stage-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .stage-status {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .stage-status.unsolved {
+      color: #f87171;
+    }
+
+    .stage-status.solved {
+      color: var(--success);
+    }
+
+    .desc-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .desc-title {
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .desc-body {
+      font-size: 20px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, textarea {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .logger-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .logger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logger-terminal {
+      flex: 1;
+      background: #02040a;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 1rem;
+      overflow-y: auto;
+      max-height: 500px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 0.75rem;
+      line-height: 1.4;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+      padding-bottom: 0.25rem;
+    }
+
+    .log-method {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .log-path {
+      color: #fff;
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .log-status {
+      color: var(--success);
+    }
+
+    .log-status.err {
+      color: #f87171;
+    }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  
+
+/* Make the left panel (stages panel) look like a sidebar */
+main > .panel:first-child {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+  gap: 0.5rem !important;
+}
+/* Hide the stages-header and desc-box in sidebar mode */
+main > .panel:first-child > .stages-header {
+  display: none !important;
+}
+main > .panel:first-child > .desc-box {
+  display: none !important;
+}
+/* Make input/button/output fields inside left panel hidden (we show them via desc-box in workspace) */
+main > .panel:first-child > .field-group,
+main > .panel:first-child > .btn {
+  display: none !important;
+}
+/* Transform stages-grid from horizontal to vertical */
+.stages-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  grid-template-columns: unset !important;
+}
+/* Make stage-cards look like nav-items */
+.stage-card {
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+.stage-card:hover {
+  background: rgba(255,255,255,0.03) !important;
+  transform: none !important;
+}
+.stage-card.active {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+.stage-card .stage-num {
+  display: none !important;
+}
+.stage-card .stage-name {
+  font-size: 0.9rem !important;
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+.stage-card.active .stage-name {
+  color: var(--primary) !important;
+}
+.stage-card .stage-status {
+  font-size: 0.65rem !important;
+  margin-top: 0 !important;
+  margin-left: auto !important;
+}
+/* Make the right panel (logger) look like workspace */
+main > .panel:last-child,
+main > .panel.logger-panel,
+main > .logger-panel {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+  min-height: 500px !important;
+}
+
+/* === HEADER BRANDING FIX === */
+header {
+  padding: 1.5rem 2rem !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  border-radius: 8px !important;
+}
+/* Shield button styling to match reference */
+.shield-btn {
+  padding: 6px 16px !important;
+  border-radius: 30px !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+}
+
+/* Responsive: on small screens, make sidebar collapse */
+@media (max-width: 1024px) {
+  main {
+    grid-template-columns: 1fr !important;
+  }
+  main > .panel:first-child {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+  }
+  .stages-grid {
+    display: none !important;
+  }
+  main > .panel:first-child.active-stages .stages-grid {
+    display: flex !important;
+  }
+  main > .panel:first-child::before {
+    content: "☰ Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary) !important;
+    text-align: center !important;
+    cursor: pointer !important;
+  }
+}
+
+
+
+
+
+/* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
+.hm-converted-container {
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  flex-grow: 1;
+  width: 100%;
+}
+.hm-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hm-sidebar .nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hm-sidebar .nav-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.hm-sidebar .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text, #f3f4f6);
+}
+.hm-sidebar .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+.hm-sidebar .nav-item .solve-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hm-sidebar .nav-item .solve-tag.solved { color: var(--success, #10b981); }
+.hm-sidebar .nav-item .solve-tag.unsolved { color: #f87171; }
+.hm-workspace {
+  background: var(--panel-bg, rgba(12, 12, 12, 0.95));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 500px;
+}
+/* Patch control (reference style) */
+.hm-patch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.hm-patch-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+}
+.hm-shield-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.hm-shield-vulnerable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.hm-shield-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.hm-patch-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.hm-patch-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.hm-patch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 34px;
+}
+.hm-patch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.hm-patch-switch input:checked + .hm-patch-slider {
+  background-color: var(--success, #10b981);
+}
+.hm-patch-switch input:checked + .hm-patch-slider:before {
+  transform: translateX(22px);
+}
+
+/* Header fixes */
+header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, var(--primary, #10b981), var(--accent, #10b981)) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+}
+.brand-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to right, var(--primary, #10b981), #fff) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hide old layout elements that get replaced by JS */
+body.hm-converted main,
+body.hm-converted > .container { display: none !important; }
+/* But show the new container */
+body.hm-converted .hm-converted-container { display: grid !important; }
+
+/* Hide old shield buttons when converted */
+body.hm-converted .shield-btn { display: none !important; }
+body.hm-converted header > .shield-btn { display: none !important; }
+
+/* Responsive: sidebar collapses on small screens */
+@media (max-width: 1024px) {
+  .hm-converted-container {
+    grid-template-columns: 1fr !important;
+    margin: 1rem auto !important;
+  }
+  .hm-sidebar {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+  .hm-sidebar::before {
+    content: "\2630  Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary, #10b981) !important;
+    text-align: center !important;
+  }
+  .hm-sidebar .nav-list {
+    display: none !important;
+  }
+  .hm-sidebar.active-menu .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #000000 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    gap: 6px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon"></div>
+      SSRF DNS & Blacklist Bypass Laboratory
+    </div>
+    <div id="shieldBtn" class="shield-btn">
+      REMEDIATION SHIELD: OFF
+    </div>
+  </header>
+
+  <main>
+    <div class="panel">
+      <div class="stages-header">
+        <h3>Vulnerability Stage Controller</h3>
+      </div>
+
+      <div class="stages-grid">
+        <div class="stage-card active" onclick="selectStage(1)">
+          <div class="stage-num">STAGE 01</div>
+          <div class="stage-name">Decimal Bypass</div>
+          <div class="stage-status unsolved" id="status-1">UNSOLVED</div>
+        </div>
+        <div class="stage-card" onclick="selectStage(2)">
+          <div class="stage-num">STAGE 02</div>
+          <div class="stage-name">DNS Rebind</div>
+          <div class="stage-status unsolved" id="status-2">UNSOLVED</div>
+        </div>
+        <div class="stage-card" onclick="selectStage(3)">
+          <div class="stage-num">STAGE 03</div>
+          <div class="stage-name">IPv6 Brackets</div>
+          <div class="stage-status unsolved" id="status-3">UNSOLVED</div>
+        </div>
+        <div class="stage-card" onclick="selectStage(4)">
+          <div class="stage-num">STAGE 04</div>
+          <div class="stage-name">Unicode IDN</div>
+          <div class="stage-status unsolved" id="status-4">UNSOLVED</div>
+        </div>
+      </div>
+
+      <div class="desc-box">
+        <div class="desc-title" id="stageTitle">Stage 1: Decimal IP Address Bypass</div>
+        <div class="desc-body" id="stageDesc">
+          The WAF screens for common literal IP addresses. Bypass using the decimal integer base representation of localhost (`2130706433`).
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Intrusion Target Fetch URL</label>
+        <input type="text" id="fetchUrl" value="http://2130706433:8000/flag">
+      </div>
+
+      <button class="btn" onclick="executeFetch()">Fetch Proxy Resource</button>
+
+      <div class="field-group" style="margin-top: 1rem;">
+        <label>Intrusion Console Output</label>
+        <textarea id="consoleOutput" rows="6" readonly placeholder="Waiting for interaction..."></textarea>
+      </div>
+    </div>
+
+    <div class="panel logger-panel">
+      <div class="logger-header">
+        <h3>HTTP Transaction Logger</h3>
+        <button class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.7rem;" onclick="clearLogs()">Clear History</button>
+      </div>
+
+      <div class="logger-terminal" id="terminal">
+        <!-- Logs populated dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentStage = 1;
+    let securityMode = 'vulnerable';
+
+    const stageDetails = {
+      1: {
+        title: "Stage 1: Decimal IP representation Bypass",
+        desc: "The literal string blacklist blocks standard IP patterns. Supply `http://2130706433:8000/flag` representing loopback to exfiltrate the administrative keys.",
+        defaultUrl: "http://2130706433:8000/flag"
+      },
+      2: {
+        title: "Stage 2: DNS Rebinding",
+        desc: "The proxy resolves the domain, performs checks, then performs fetch. Exploit with a DNS rebinding service to alternate IP mapping dynamically.",
+        defaultUrl: "http://rebind-service.local:8000/flag"
+      },
+      3: {
+        title: "Stage 3: IPv6 Bracket Formatting",
+        desc: "The blacklist validation ignores IPv6 parsing. Enclose IPv6 loopback addresses inside square brackets: `http://[0000:0000:0000:0000:0000:0000:0000:0001]:8000/flag`.",
+        defaultUrl: "http://[0000:0000:0000:0000:0000:0000:0000:0001]:8000/flag"
+      },
+      4: {
+        title: "Stage 4: Unicode IDN Character Normalization",
+        desc: "IDN/Unicode character mapping normalizes inputs back to English. Inject `http://ⓛⓞⓒⓐⓛⓗⓞⓢⓣ:8000/flag` to exfiltrate the expert stage key.",
+        defaultUrl: "http://ⓛⓞⓒⓐⓛⓗⓞⓢⓣ:8000/flag"
+      }
+    };
+
+    function selectStage(num) {
+      currentStage = num;
+      document.querySelectorAll('.stage-card').forEach((card, idx) => {
+        card.classList.toggle('active', idx === num - 1);
+      });
+      document.getElementById('stageTitle').innerText = stageDetails[num].title;
+      document.getElementById('stageDesc').innerHTML = stageDetails[num].desc;
+      document.getElementById('fetchUrl').value = stageDetails[num].defaultUrl;
+    }
+
+    async function checkSecurityMode() {
+      try {
+        const res = await fetch('/api/settings/security-mode');
+        const data = await res.json();
+        securityMode = data.securityMode;
+        const btn = document.getElementById('shieldBtn');
+        if (securityMode === 'secure') {
+          btn.classList.add('secure');
+          btn.innerText = 'REMEDIATION SHIELD: ON';
+        } else {
+          btn.classList.remove('secure');
+          btn.innerText = 'REMEDIATION SHIELD: OFF';
+        }
+      } catch (err) {}
+    }
+
+    document.getElementById('shieldBtn').onclick = async () => {
+      const targetMode = securityMode === 'secure' ? 'vulnerable' : 'secure';
+      await fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: targetMode })
+      });
+      checkSecurityMode();
+    };
+
+    async function executeFetch() {
+      const url = document.getElementById('fetchUrl').value;
+      const consoleOut = document.getElementById('consoleOutput');
+      consoleOut.value = `Dispatching secure proxy request for: ${url}...\n`;
+      
+      try {
+        const res = await fetch(`/fetch?url=${encodeURIComponent(url)}`, {
+          headers: { 'X-Stage': currentStage.toString() }
+        });
+        const text = await res.text();
+        consoleOut.value = text;
+
+        if (text.includes("FLAG{")) {
+          localStorage.setItem(`stage_ssrf_bypass_${currentStage}_solved`, 'true');
+          updateSolvedBadges();
+        }
+      } catch (err) {
+        consoleOut.value = `Access Blocked: ${err.message}`;
+      }
+    }
+
+    function updateSolvedBadges() {
+      for (let i = 1; i <= 4; i++) {
+        const solved = localStorage.getItem(`stage_ssrf_bypass_${i}_solved`) === 'true';
+        const badge = document.getElementById(`status-${i}`);
+        if (solved) {
+          badge.innerText = "SOLVED";
+          badge.className = "stage-status solved";
+        } else {
+          badge.innerText = "UNSOLVED";
+          badge.className = "stage-status unsolved";
+        }
+      }
+    }
+
+    async function fetchLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const term = document.getElementById('terminal');
+        term.innerHTML = '';
+        data.logs.forEach(log => {
+          const item = document.createElement('div');
+          item.className = 'log-item';
+          const isErr = log.statusCode >= 400;
+          item.innerHTML = `
+            <span class="log-method">[${log.method}]</span>
+            <span class="log-path">${log.path}</span>
+            <span class="log-status ${isErr ? 'err' : ''}">${log.statusCode}</span>
+          `;
+          term.appendChild(item);
+        });
+      } catch (err) {}
+    }
+
+    async function clearLogs() {
+      await fetch('/api/logs/clear', { method: 'POST' });
+      fetchLogs();
+    }
+
+    // Startup
+    checkSecurityMode();
+    updateSolvedBadges();
+    selectStage(1);
+    fetchLogs();
+    setInterval(fetchLogs, 3000);
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+
+
+
+
+
+
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 1. Fix branding ──
+  var brandIcon = document.querySelector('.brand-icon');
+  if (brandIcon && !brandIcon.textContent.trim()) brandIcon.textContent = 'HM';
+
+  var brand = document.querySelector('.brand');
+  if (brand && !brand.querySelector('.brand-title')) {
+    Array.from(brand.childNodes).forEach(function(n) {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = '';
+    });
+    var titleEl = document.createElement('div');
+    titleEl.className = 'brand-title';
+    titleEl.textContent = 'HackMeIfYouCan Portal';
+    titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
+    brand.appendChild(titleEl);
+  }
+
+  // ── 2. Detect layout type ──
+  var nativeAside = document.querySelector('aside');
+  var stageCards = document.querySelectorAll('.stage-card');
+  var stageBtns = document.querySelectorAll('.stage-btn');
+  var stages = stageCards.length > 0 ? stageCards : stageBtns;
+  var hasNativeSidebar = nativeAside && nativeAside.querySelector('.nav-list');
+
+  if (!hasNativeSidebar && stages.length === 0) return; // single-card lab, skip
+
+  // ── 3. Replace shield button with checkbox toggle ──
+  var oldShield = document.getElementById('shieldBtn') || document.querySelector('.shield-btn');
+  var headerEl = document.querySelector('header');
+  
+  // Check if header already has proper patch-control with checkbox
+  var existingPatch = headerEl ? headerEl.querySelector('.patch-control') : null;
+  var existingCheckbox = existingPatch ? existingPatch.querySelector('input[type="checkbox"]') : null;
+  
+  if (headerEl && !existingCheckbox) {
+    var patchControl = document.createElement('div');
+    patchControl.className = 'hm-patch-control';
+    patchControl.innerHTML = '<div class="hm-patch-label">REMEDIATION SHIELD</div>' +
+      '<div id="hm-shield-indicator" class="hm-shield-badge hm-shield-vulnerable">VULNERABLE</div>' +
+      '<label class="hm-patch-switch"><input type="checkbox" id="hm-security-checkbox"><span class="hm-patch-slider"></span></label>';
+
+    if (oldShield && oldShield.parentNode) {
+      oldShield.parentNode.replaceChild(patchControl, oldShield);
+    } else if (existingPatch) {
+      existingPatch.parentNode.replaceChild(patchControl, existingPatch);
+    } else {
+      headerEl.appendChild(patchControl);
+    }
+
+    var hmCheckbox = document.getElementById('hm-security-checkbox');
+    var hmIndicator = document.getElementById('hm-shield-indicator');
+
+    function hmSyncShield() {
+      fetch('/api/settings/security-mode')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.securityMode === 'secure') {
+            hmCheckbox.checked = true;
+            hmIndicator.textContent = 'SECURE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-secure';
+          } else {
+            hmCheckbox.checked = false;
+            hmIndicator.textContent = 'VULNERABLE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-vulnerable';
+          }
+        }).catch(function(){});
+    }
+
+    hmCheckbox.addEventListener('change', function() {
+      var mode = hmCheckbox.checked ? 'secure' : 'vulnerable';
+      fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).then(function() { hmSyncShield(); }).catch(function(){});
+    });
+
+    hmSyncShield();
+  } else if (existingCheckbox) {
+    // Existing patch control with checkbox — just hide old shield-btn if separate
+    if (oldShield && oldShield !== existingPatch) oldShield.style.display = 'none';
+    // Hide extra elements in header (badges etc) — keep only brand + patch
+    var headerChildren = headerEl.children;
+    for (var i = 0; i < headerChildren.length; i++) {
+      var child = headerChildren[i];
+      if (!child.classList.contains('brand') && !child.classList.contains('patch-control') &&
+          !child.classList.contains('hm-patch-control') && !child.querySelector('.patch-control')) {
+        // Hide extra divs that wrap badge + patch-control
+        if (child.querySelector('.patch-control')) continue;
+        if (child.classList.contains('badge')) child.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Build unified sidebar ──
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'hm-sidebar';
+  var navList = document.createElement('ul');
+  navList.className = 'nav-list';
+
+  if (hasNativeSidebar) {
+    // NATIVE: Convert existing nav-items
+    var existingNavItems = nativeAside.querySelectorAll('.nav-item');
+    existingNavItems.forEach(function(item, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (item.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      li.textContent = item.textContent.trim();
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        item.click(); // trigger original
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  } else {
+    // CONVERTED: Build from stage-cards/buttons
+    stages.forEach(function(stage, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (stage.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      var nameEl = stage.querySelector('.stage-name') || stage.querySelector('span:first-child');
+      var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+      var name = nameEl ? nameEl.textContent.trim() : ('Stage ' + (idx + 1));
+      var statusText = statusEl ? statusEl.textContent.trim() : 'UNSOLVED';
+      var isSolved = statusText.toUpperCase() === 'SOLVED';
+      li.innerHTML = name + '<span class="solve-tag ' + (isSolved ? 'solved' : 'unsolved') + '">' + statusText + '</span>';
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        stage.click();
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  }
+
+  sidebar.appendChild(navList);
+  sidebar.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && e.target === sidebar) {
+      sidebar.classList.toggle('active-menu');
+    }
+  });
+
+  // ── 5. Build workspace ──
+  var workspace = document.createElement('div');
+  workspace.className = 'hm-workspace';
+
+  if (hasNativeSidebar) {
+    // NATIVE: move the existing workspace/main content
+    var existingWorkspace = document.querySelector('.workspace') || document.querySelector('main');
+    if (existingWorkspace) {
+      // Clone all children into new workspace
+      while (existingWorkspace.firstChild) {
+        workspace.appendChild(existingWorkspace.firstChild);
+      }
+    }
+  } else {
+    // CONVERTED: gather panels
+    var mainEl = document.querySelector('main');
+    var containerEl = mainEl || document.querySelector('.container');
+    if (containerEl) {
+      var panels = containerEl.querySelectorAll('.panel, .logger-panel');
+      panels.forEach(function(panel) {
+        var clone = panel.cloneNode(true);
+        var sg = clone.querySelector('.stages-grid');
+        if (sg) sg.remove();
+        var sh = clone.querySelector('.stages-header');
+        if (sh) sh.remove();
+        var ss = clone.querySelector('.stage-selector');
+        if (ss) ss.remove();
+        workspace.appendChild(clone);
+      });
+      if (workspace.children.length === 0) {
+        Array.from(containerEl.children).forEach(function(child) {
+          if (child.tagName !== 'HEADER') workspace.appendChild(child.cloneNode(true));
+        });
+      }
+    }
+  }
+
+  // ── 6. Insert new layout ──
+  var newContainer = document.createElement('div');
+  newContainer.className = 'hm-converted-container';
+  newContainer.appendChild(sidebar);
+  newContainer.appendChild(workspace);
+
+  document.body.classList.add('hm-converted');
+
+  if (headerEl && headerEl.nextSibling) {
+    headerEl.parentNode.insertBefore(newContainer, headerEl.nextSibling);
+  } else {
+    document.body.appendChild(newContainer);
+  }
+
+  // ── 7. Observer for solve status sync ──
+  if (!hasNativeSidebar && stages.length > 0) {
+    var observer = new MutationObserver(function() {
+      stages.forEach(function(stage, idx) {
+        var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+        if (statusEl) {
+          var navItem = navList.querySelector('[data-stage-idx="' + idx + '"]');
+          if (navItem) {
+            var tag = navItem.querySelector('.solve-tag');
+            if (tag) {
+              var txt = statusEl.textContent.trim();
+              tag.textContent = txt;
+              tag.className = 'solve-tag ' + (txt.toUpperCase() === 'SOLVED' ? 'solved' : 'unsolved');
+            }
+          }
+        }
+      });
+    });
+    stages.forEach(function(stage) {
+      observer.observe(stage, { attributes: true, childList: true, subtree: true });
+    });
+  }
+})();
+</script>
+
+</body>
+
+</html>
+"""
+
+@public_app.route('/')
+def index():
+    add_log('GET', '/', 200)
+    return render_template_string(DASHBOARD_HTML)
+
+@public_app.route('/fetch')
+def fetch():
+    target_url = request.args.get('url')
+    stage = request.headers.get('X-Stage') or '1'
+    if not target_url:
+        add_log('GET', '/fetch', 400)
+        return jsonify({"success": False, "error": "Missing 'url' parameter"}), 400
+
+    try:
+        parsed_url = urllib.parse.urlparse(target_url)
+        hostname = parsed_url.hostname
+        if not hostname:
+            add_log('GET', '/fetch', 400)
+            return jsonify({"success": False, "error": "Invalid URL"}), 400
+
+        # Perform Security Mode DNS validations
+        if security_mode == 'secure':
+            # Industry Standard Defense: Resolve DNS and check against private subnets
+            try:
+                resolved_ip = socket.gethostbyname(hostname)
+                ip_parts = list(map(int, resolved_ip.split('.')))
+                # RFC 1918 + loopback block
+                if ip_parts[0] == 127 or ip_parts[0] == 10 or (ip_parts[0] == 172 and 16 <= ip_parts[1] <= 31) or (ip_parts[0] == 192 and ip_parts[1] == 168) or ip_parts[0] == 0:
+                    add_log('GET', '/fetch', 403)
+                    return jsonify({"success": False, "error": "Remediation Shield Blocked: Connection to private IP ranges restricted."}), 403
+            except Exception:
+                pass
+        else:
+            # VULNERABLE Blacklist
+            blacklist = ['127.0.0.1', 'localhost', '0.0.0.0', '127.0.1.1', '[::1]', '::1']
+            if hostname.lower() in blacklist:
+                add_log('GET', '/fetch', 403)
+                return jsonify({
+                    "success": False,
+                    "error": "Forbidden Target: Loopback access blocked by basic blacklist WAF."
+                }), 403
+
+        # Forward headers for stage handling
+        headers = {"X-Stage": stage}
+        response = requests.get(target_url, headers=headers, timeout=3)
+        add_log('GET', '/fetch', 200)
+        return response.text
+
+    except Exception as e:
+        add_log('GET', '/fetch', 500)
+        return jsonify({"success": False, "error": f"Failed to fetch resource: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    public_app.run(host='0.0.0.0', port=3000)

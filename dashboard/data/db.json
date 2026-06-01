@@ -1,0 +1,371 @@
+{
+  "user": {
+    "username": "Guest Researcher",
+    "solvedCount": 0
+  },
+  "labs": {
+    "a01-idor": {
+      "id": "a01-idor",
+      "name": "Insecure Direct Object References (IDOR)",
+      "category": "A01:2021-Broken Access Control",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{idor_direct_access_success}",
+      "containerName": "lab_a01_idor",
+      "port": 30001
+    },
+    "a01-privesc": {
+      "id": "a01-privesc",
+      "name": "Vertical & Horizontal Privilege Escalation",
+      "category": "A01:2021-Broken Access Control",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{jwt_privilege_escalation_admin}",
+      "containerName": "lab_a01_privesc",
+      "port": 30002
+    },
+    "a01-path-traversal": {
+      "id": "a01-path-traversal",
+      "name": "Path Traversal (LFI)",
+      "category": "A01:2021-Broken Access Control",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{local_file_inclusion_secret}",
+      "containerName": "lab_a01_path_traversal",
+      "port": 30003
+    },
+    "a02-weak-crypto": {
+      "id": "a02-weak-crypto",
+      "name": "Weak Cryptography & Token Decryption",
+      "category": "A02:2021-Cryptographic Failures",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{broken_cryptography_cracked}",
+      "containerName": "lab_a02_weak_crypto",
+      "port": 30004
+    },
+    "a03-sqli-union": {
+      "id": "a03-sqli-union",
+      "name": "Union-Based SQL Injection",
+      "category": "A03:2021-Injection",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{sqli_union_data_extracted}",
+      "containerName": "lab_a03_sqli_union",
+      "port": 30005
+    },
+    "a03-sqli-blind": {
+      "id": "a03-sqli-blind",
+      "name": "Blind SQL Injection (Boolean/Time)",
+      "category": "A03:2021-Injection",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{blind_sqli_exfiltrated}",
+      "containerName": "lab_a03_sqli_blind",
+      "port": 30006
+    },
+    "a03-cmd-injection": {
+      "id": "a03-cmd-injection",
+      "name": "OS Command Injection",
+      "category": "A03:2021-Injection",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{command_injection_rce_shell}",
+      "containerName": "lab_a03_cmd_injection",
+      "port": 30007
+    },
+    "a03-ssti": {
+      "id": "a03-ssti",
+      "name": "Server-Side Template Injection (SSTI)",
+      "category": "A03:2021-Injection",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{ssti_template_rce_done}",
+      "containerName": "lab_a03_ssti",
+      "port": 30008
+    },
+    "a04-insecure-design": {
+      "id": "a04-insecure-design",
+      "name": "Broken Password Reset Flow",
+      "category": "A04:2021-Insecure Design",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{broken_reset_flow_hijacked}",
+      "containerName": "lab_a04_insecure_design",
+      "port": 30009
+    },
+    "a05-xxe": {
+      "id": "a05-xxe",
+      "name": "XML External Entity (XXE) Injection",
+      "category": "A05:2021-Security Misconfiguration",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{xxe_external_entity_leak}",
+      "containerName": "lab_a05_xxe",
+      "port": 30010
+    },
+    "a06-outdated-components": {
+      "id": "a06-outdated-components",
+      "name": "Vulnerable & Outdated Components (CVE)",
+      "category": "A06:2021-Vulnerable and Outdated Components",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{vulnerable_dependency_cve_rce}",
+      "containerName": "lab_a06_outdated_components",
+      "port": 30012
+    },
+    "a07-jwt-bypass": {
+      "id": "a07-jwt-bypass",
+      "name": "JWT Signature Bypass (None Algorithm)",
+      "category": "A07:2021-Identification and Authentication Failures",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{jwt_none_signature_bypass}",
+      "containerName": "lab_a07_jwt_bypass",
+      "port": 30013
+    },
+    "a08-deserialization-python": {
+      "id": "a08-deserialization-python",
+      "name": "Insecure Deserialization (Python Pickle)",
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{pickle_deserialization_rce}",
+      "containerName": "lab_a08_deserialization_python",
+      "port": 30014
+    },
+    "a09-log-injection": {
+      "id": "a09-log-injection",
+      "name": "Log Injection & Log Poisoning",
+      "category": "A09:2021-Security Logging and Monitoring Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{log_poisoning_rce_shell}",
+      "containerName": "lab_a09_log_injection",
+      "port": 30015
+    },
+    "a10-ssrf": {
+      "id": "a10-ssrf",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "category": "A10:2021-Server-Side Request Forgery (SSRF)",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{ssrf_internal_metadata_leak}",
+      "containerName": "lab_a10_ssrf",
+      "port": 30016
+    },
+    "a01-cors": {
+      "id": "a01-cors",
+      "name": "CORS Misconfiguration with Credentials",
+      "category": "A01:2021-Broken Access Control",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{cors_origin_credential_leak}",
+      "containerName": "lab_a01_cors",
+      "port": 30017
+    },
+    "a03-sqli-time": {
+      "id": "a03-sqli-time",
+      "name": "Time-Blind SQL Injection",
+      "category": "A03:2021-Injection",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{time_sqli_exfiltrated}",
+      "containerName": "lab_a03_sqli_time",
+      "port": 30018
+    },
+    "a05-git": {
+      "id": "a05-git",
+      "name": "Exposed Git Repository & Info Disclosure",
+      "category": "A05:2021-Security Misconfiguration",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{git_repo_secrets_dumped}",
+      "containerName": "lab_a05_git",
+      "port": 30019
+    },
+    "a07-oauth": {
+      "id": "a07-oauth",
+      "name": "Broken OAuth 2.0 Flow (Account Takeover)",
+      "category": "A07:2021-Identification and Authentication Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{oauth_redirect_uri_hijack}",
+      "containerName": "lab_a07_oauth",
+      "port": 30020
+    },
+    "a10-ssrf-bypass": {
+      "id": "a10-ssrf-bypass",
+      "name": "SSRF with DNS & Blacklist Bypass",
+      "category": "A10:2021-Server-Side Request Forgery (SSRF)",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{ssrf_blacklist_bypass_secret}",
+      "containerName": "lab_a10_ssrf_bypass",
+      "port": 30021
+    },
+    "a07-brute-force": {
+      "id": "a07-brute-force",
+      "name": "Username Enumeration & Password Brute Force",
+      "category": "A07:2021-Identification and Authentication Failures",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{verbose_errors_enable_brute_force}",
+      "containerName": "lab_a07_brute_force",
+      "port": 30022
+    },
+    "a08-node-serialize": {
+      "id": "a08-node-serialize",
+      "name": "Insecure Deserialization (Node serialize)",
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{node_serialize_rce_shell}",
+      "containerName": "lab_a08_node_serialize",
+      "port": 30023
+    },
+    "a09-log-xss": {
+      "id": "a09-log-xss",
+      "name": "Stored XSS via Connection Log Poisoning",
+      "category": "A09:2021-Security Logging and Monitoring Failures",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{log_poisoning_stored_xss}",
+      "containerName": "lab_a09_log_xss",
+      "port": 30024
+    },
+    "a03-nosql": {
+      "id": "a03-nosql",
+      "name": "NoSQL Operator Injection (MongoDB/NeDB)",
+      "category": "A03:2021-Injection",
+      "difficulty": "Easy",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{nosql_operator_injection_bypass}",
+      "containerName": "lab_a03_nosql",
+      "port": 30025
+    },
+    "a03-ldap": {
+      "id": "a03-ldap",
+      "name": "LDAP Filter Wildcard Search Bypass",
+      "category": "A03:2021-Injection",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{ldap_filter_wildcard_leak}",
+      "containerName": "lab_a03_ldap",
+      "port": 30026
+    },
+    "a03-second-order": {
+      "id": "a03-second-order",
+      "name": "Second-Order SQL Injection",
+      "category": "A03:2021-Injection",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{second_order_sqli_takeover}",
+      "containerName": "lab_a03_second_order",
+      "port": 30027
+    },
+    "a03-xpath": {
+      "id": "a03-xpath",
+      "name": "XPath Injection XML Data Disclosure",
+      "category": "A03:2021-Injection",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{xpath_xml_traversal_success}",
+      "containerName": "lab_a03_xpath",
+      "port": 30028
+    },
+    "a03-argument-injection": {
+      "id": "a03-argument-injection",
+      "name": "Parameter & Argument Injection RCE",
+      "category": "A03:2021-Injection",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{argument_injection_rce_parameter}",
+      "containerName": "lab_a03_argument_injection",
+      "port": 30029
+    },
+    "a08-prototype-pollution": {
+      "id": "a08-prototype-pollution",
+      "name": "Server-Side Prototype Pollution",
+      "category": "A08:2021-Software and Data Integrity Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{prototype_pollution_global_pollution}",
+      "containerName": "lab_a08_prototype_pollution",
+      "port": 30030
+    },
+    "a02-jwt-confusion": {
+      "id": "a02-jwt-confusion",
+      "name": "JWT Key Confusion Attack (HMAC vs RSA)",
+      "category": "A02:2021-Cryptographic Failures",
+      "difficulty": "Hard",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{jwt_key_confusion_signature_bypass}",
+      "containerName": "lab_a02_jwt_confusion",
+      "port": 30031
+    },
+    "a06-request-smuggling": {
+      "id": "a06-request-smuggling",
+      "name": "HTTP Request Smuggling (CL.TE Mismatch)",
+      "category": "A06:2021-Vulnerable and Outdated Components",
+      "difficulty": "Expert",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{request_smuggling_cl_te_poisoning}",
+      "containerName": "lab_a06_request_smuggling",
+      "port": 30032
+    },
+    "a04-race-condition": {
+      "id": "a04-race-condition",
+      "name": "Concurrency Race Condition (Limit Overrun)",
+      "category": "A04:2021-Insecure Design",
+      "difficulty": "Medium",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{race_condition_concurrency_bypass}",
+      "containerName": "lab_a04_race_condition",
+      "port": 30033
+    },
+    "cybercorp-portal": {
+      "id": "cybercorp-portal",
+      "name": "OWASP Flagship - CyberCorp Audit Portal",
+      "category": "A00:2021-Multi-Stage Flagship Scenario",
+      "difficulty": "Expert",
+      "solved": false,
+      "active": true,
+      "flag": "FLAG{cybercorp_multi_stage_flagship_rce}",
+      "containerName": "lab_cybercorp_portal",
+      "port": 30040
+    }
+  }
+}

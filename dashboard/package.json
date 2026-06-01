@@ -1,0 +1,17 @@
+{
+  "name": "vuln-labs-dashboard",
+  "version": "1.0.0",
+  "description": "Central dashboard for managing and testing web security vulnerability labs.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "express": "^4.19.2",
+    "http-proxy": "^1.18.1",
+    "ws": "^8.16.0"
+
+  },
+  "private": true
+}

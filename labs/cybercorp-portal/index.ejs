@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberCorp Portal - Core ERP Environment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --glass: rgba(17, 24, 39, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-glow: none;
+      --accent: #10b981;
+      --success: #10b981;
+      --success-glow: none;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-glow: none;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+      background-attachment: fixed;
+      font-size: 20px;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Styling */
+    aside {
+      background: rgba(3, 7, 18, 0.6);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--glass-border);
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #030712;
+      box-shadow: none;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: linear-gradient(to right, var(--primary), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .nav-item.active {
+      border-left: 3px solid var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+      color: #fff;
+    }
+
+    .user-badge {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .user-info {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    /* Content Area */
+    .content-viewport {
+      padding: 40px;
+      max-width: 1400px;
+      width: calc(100% - 80px);
+      margin: 0 auto;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 20px;
+    }
+
+    .welcome-text h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .welcome-text p {
+      margin: 5px 0 0;
+      color: var(--text-muted);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* Remediation Toggle Switch */
+    .patch-control {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .patch-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .patch-switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 24px;
+    }
+
+    .patch-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ef4444;
+      transition: .3s;
+      border-radius: 24px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #10b981;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .shield-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .shield-vulnerable {
+      background: var(--danger-glow);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .shield-secure {
+      background: var(--success-glow);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+    }
+
+    .balance-indicator {
+      background: var(--success-glow);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 12px;
+      padding: 12px 24px;
+      text-align: right;
+    }
+
+    .balance-label {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .balance-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--glass);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: border-color 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 12px;
+    }
+
+    .card-icon {
+      color: var(--primary);
+    }
+
+    /* Form controls */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      background: rgba(3, 7, 18, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      color: #fff;
+      font-family: inherit;
+      box-sizing: border-box;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #030712;
+    }
+
+    .btn-primary:hover {
+      background: #0ea5e9;
+      box-shadow: none;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent:hover {
+      background: #9333ea;
+      box-shadow: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Terminal Console */
+    .terminal-console {
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      max-height: 250px;
+      overflow-y: auto;
+      color: #34d399;
+      white-space: pre-wrap;
+    }
+
+    .token-text {
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: #a7f3d0;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .announcement-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    .announcement-title {
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    /* Concept Manual View styling */
+    .manual-container {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      max-width: 90%;
+    }
+
+    .manual-section {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .manual-section h2 {
+      font-size: 24px;
+      color: var(--primary);
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 12px;
+    }
+
+    .manual-section h3 {
+      font-size: 20px;
+      color: #fff;
+      margin: 20px 0 10px;
+    }
+
+    .manual-section p {
+      line-height: 1.6;
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .code-block {
+      background: #000000;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      overflow-x: auto;
+      white-space: pre;
+      margin: 15px 0;
+    }
+
+    .vuln-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--warning);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .mitigation-box {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+
+    .mitigation-title {
+      font-weight: 700;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    /* Burp Repeater UI styling */
+    .repeater-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .repeater-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .repeater-editor {
+      width: 100%;
+      height: 380px;
+      background: #000000;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      color: #38bdf8;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      padding: 16px;
+      box-sizing: border-box;
+      resize: none;
+    }
+
+    .repeater-response {
+      width: 100%;
+      height: 380px;
+      background: #000000;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      color: #34d399;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      padding: 16px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  
+
+
+
+/* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
+.hm-converted-container {
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  flex-grow: 1;
+  width: 100%;
+}
+.hm-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hm-sidebar .nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hm-sidebar .nav-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.hm-sidebar .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text, #f3f4f6);
+}
+.hm-sidebar .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+.hm-sidebar .nav-item .solve-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hm-sidebar .nav-item .solve-tag.solved { color: var(--success, #10b981); }
+.hm-sidebar .nav-item .solve-tag.unsolved { color: #f87171; }
+.hm-workspace {
+  background: var(--panel-bg, rgba(12, 12, 12, 0.95));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 500px;
+}
+/* Patch control (reference style) */
+.hm-patch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.hm-patch-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+}
+.hm-shield-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.hm-shield-vulnerable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.hm-shield-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.hm-patch-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.hm-patch-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.hm-patch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 34px;
+}
+.hm-patch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.hm-patch-switch input:checked + .hm-patch-slider {
+  background-color: var(--success, #10b981);
+}
+.hm-patch-switch input:checked + .hm-patch-slider:before {
+  transform: translateX(22px);
+}
+
+/* Header fixes */
+header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, var(--primary, #10b981), var(--accent, #10b981)) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+}
+.brand-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to right, var(--primary, #10b981), #fff) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hide old layout elements that get replaced by JS */
+body.hm-converted main,
+body.hm-converted > .container { display: none !important; }
+/* But show the new container */
+body.hm-converted .hm-converted-container { display: grid !important; }
+
+/* Hide old shield buttons when converted */
+body.hm-converted .shield-btn { display: none !important; }
+body.hm-converted header > .shield-btn { display: none !important; }
+
+/* Responsive: sidebar collapses on small screens */
+@media (max-width: 1024px) {
+  .hm-converted-container {
+    grid-template-columns: 1fr !important;
+    margin: 1rem auto !important;
+  }
+  .hm-sidebar {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+  .hm-sidebar::before {
+    content: "\2630  Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary, #10b981) !important;
+    text-align: center !important;
+  }
+  .hm-sidebar .nav-list {
+    display: none !important;
+  }
+  .hm-sidebar.active-menu .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #000000 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    gap: 6px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside>
+      <div>
+        <div class="brand">
+          <div class="brand-icon">HM</div>
+          <div class="brand-title">HackMeIfYouCan Portal</div>
+        </div>
+        
+        <ul class="nav-list">
+          <li class="nav-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+            <span></span> Core ERP Dashboard
+          </li>
+          <li class="nav-item" id="nav-repeater" onclick="switchTab('repeater')">
+            <span></span> Burp Repeater
+          </li>
+          <li class="nav-item" id="nav-manual" onclick="switchTab('manual')">
+            <span></span> Vulnerability Manual
+          </li>
+          <li class="nav-item" onclick="window.open('/.well-known/jwks.json')">
+            <span></span> SSO JWKS Feed
+          </li>
+          <li class="nav-item" onclick="window.open('/public-key.pem')">
+            <span></span> Public Certificate
+          </li>
+          <% if (user.role === 'admin') { %>
+            <li class="nav-item" onclick="location.href='/admin/render'" style="color: var(--accent); border: 1px dashed var(--accent); background: rgba(168, 85, 247, 0.05);">
+              <span></span> EXECUTIVE CONSOLE
+            </li>
+          <% } %>
+        </ul>
+      </div>
+
+      <div class="user-badge">
+        <div class="user-info">Logged in as: <%= user.username %></div>
+        <div class="user-role"><%= user.role.toUpperCase() %> SESSION</div>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <div class="content-viewport">
+      <!-- VIEW 1: ERP Dashboard Panel -->
+      <main id="dashboard-view">
+        <header>
+          <div class="welcome-text">
+            <h1>Corporate Operations Hub</h1>
+            <p>Welcome to CyberCorp ERP Gateway. Perform security audits and verify business logic flows.</p>
+          </div>
+
+          <div class="header-controls">
+            <!-- Active Remediation Switch -->
+            <div class="patch-control">
+              <div class="patch-label">REMEDIATION SHIELD</div>
+              <div id="shield-indicator" class="shield-badge shield-vulnerable">VULNERABLE</div>
+              <label class="patch-switch">
+                <input type="checkbox" id="security-mode-checkbox" onchange="toggleSecurityMode()">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="balance-indicator">
+              <div class="balance-label">Corporate Balance</div>
+              <div class="balance-amount" id="balance-display">$0</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Card 1: SQL Catalog -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> Enterprise Catalog Database
+            </div>
+            <p style="font-size:13px; color: var(--text-muted); margin:0;">
+              Queries catalog items using an internal database search parser. Supports custom SQL statement injection parameters.
+            </p>
+            <div class="form-group">
+              <label for="catalog-search">Query Catalog</label>
+              <input type="text" id="catalog-search" placeholder="Search product name or inject SQL statement...">
+            </div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="searchCatalog()">Search Catalog</button>
+            </div>
+            <div class="terminal-console" id="catalog-results">Database output console...</div>
+          </div>
+
+          <!-- Card 2: Promo Claim Ledger (Race Condition) -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> Promo Claim Ledger
+            </div>
+            <p style="font-size:13px; color: var(--text-muted); margin:0;">
+              Claim your corporate welcome credit using the coupon code <code>WELCOME50</code>. Balance check operations verify one claim per account.
+            </p>
+            <div class="form-group">
+              <label for="coupon-code">Claim Code</label>
+              <input type="text" id="coupon-code" value="WELCOME50" placeholder="WELCOME50">
+            </div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="applyCouponSingle()">Standard Apply</button>
+              <button class="btn-accent" onclick="applyCouponConcurrently()">Trigger Concurrency (Race)</button>
+            </div>
+            <div class="terminal-console" id="coupon-results">Coupon claim status output...</div>
+          </div>
+
+          <!-- Card 3: Multi-Tenant Invoicing Document Archiver (IDOR) -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> Invoice Archiver API
+            </div>
+            <p style="font-size:13px; color: var(--text-muted); margin:0;">
+              Query regional document partitions dynamically by providing Tenant and Document ID references.
+            </p>
+            <div class="form-group">
+              <label for="tenant-id">Tenant ID</label>
+              <input type="text" id="tenant-id" value="<%= user.tenantId %>" placeholder="tenant_b_827f83a0">
+            </div>
+            <div class="form-group">
+              <label for="doc-id">Document Hash ID</label>
+              <input type="text" id="doc-id" value="doc_guest_902f831e" placeholder="doc_guest_902f831e">
+            </div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="fetchDocument()">Download Document</button>
+            </div>
+            <div class="terminal-console" id="document-results">Document raw contents will load here...</div>
+          </div>
+
+          <!-- Card 4: SSO JWT Authentication Tokens Explorer -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> Session SSO Authentication Cryptography
+            </div>
+            <p style="font-size:13px; color: var(--text-muted); margin:0;">
+              Active identity session verified using a JSON Web Token (JWT) cookie.
+            </p>
+            <div class="form-group">
+              <label>Raw auth_token Cookie</label>
+              <div class="token-text" id="token-display">Loading token data...</div>
+            </div>
+            <div class="btn-group">
+              <button class="btn-outline" onclick="copyToken()">Copy Token</button>
+              <button class="btn-outline" onclick="location.reload()">Reload Session</button>
+            </div>
+          </div>
+
+          <!-- Card 5: Corporate System Announcements Ledger -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> Corporate System Announcements
+            </div>
+            <div id="announcements-container" style="display:flex; flex-direction:column; gap:10px;">
+              Loading official notices...
+            </div>
+          </div>
+
+          <!-- Card 6: Developer Custom Settings (Prototype Pollution) -->
+          <div class="card">
+            <div class="card-title">
+              <span class="card-icon"></span> System Settings Synchronization
+            </div>
+            <p style="font-size:13px; color: var(--text-muted); margin:0;">
+              Developers can override corporate variables by submitting custom JSON config parameters.
+            </p>
+            <div class="form-group">
+              <label for="settings-json">Config Override JSON</label>
+              <textarea id="settings-json" style="height:100px; font-family:'Space Mono', monospace;">{
+  "theme": "glassmorphism"
+}</textarea>
+          </div>
+          <div class="btn-group">
+            <button class="btn-primary" onclick="syncSettings()">Sync Settings</button>
+            <button class="btn-outline" onclick="resetState()">Factory Reset State</button>
+          </div>
+          <div class="terminal-console" id="settings-results">Synchronization logs...</div>
+        </div>
+      </main>
+
+      <!-- VIEW 2: Embedded Burp Repeater -->
+      <main id="repeater-view" style="display: none;">
+        <header>
+          <div class="welcome-text">
+            <h1>Burp Repeater Console</h1>
+            <p>Modify raw HTTP requests and verify platform responses in real-time.</p>
+          </div>
+        </header>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="repeater-template">Load Request Payload Template</label>
+          <select id="repeater-template" onchange="loadRepeaterTemplate()">
+            <option value="announcements">GET /api/announcements (Announcements Notice)</option>
+            <option value="idor">GET /api/tenants/tenant_a_19df94c2/documents/doc_admin_f8c12a84 (IDOR document download)</option>
+            <option value="settings">POST /api/settings (Prototype Pollution deep merge)</option>
+            <option value="coupon">POST /api/apply-coupon (Promo code apply)</option>
+          </select>
+        </div>
+
+        <div class="repeater-grid">
+          <!-- Request Editor -->
+          <div class="repeater-card">
+            <div class="card-title">⌨️ Raw HTTP Request Editor</div>
+            <textarea class="repeater-editor" id="repeater-editor-textarea"></textarea>
+            <button class="btn-accent" onclick="sendRepeaterRequest()">SEND REQUEST</button>
+          </div>
+
+          <!-- Response Display -->
+          <div class="repeater-card">
+            <div class="card-title"> Raw HTTP Response Console</div>
+            <div class="repeater-response" id="repeater-response-pre">Response data will load here...</div>
+          </div>
+        </div>
+      </main>
+
+      <!-- VIEW 3: Interactive Vulnerability Concept Manual -->
+      <main id="manual-view" style="display: none;">
+        <header>
+          <div class="welcome-text">
+            <h1>Auditing & Security Concept Guide</h1>
+            <p>Master the underlying vulnerability mechanics, detection algorithms, and secure remediation techniques.</p>
+          </div>
+        </header>
+
+        <div class="manual-container">
+          <!-- Vulnerability 1: BOLA / IDOR -->
+          <div class="manual-section">
+            <h2> Broken Object Level Authorization (BOLA / IDOR)</h2>
+            <div class="vuln-badge">OWASP A01:2021 - Broken Access Control</div>
+            <p>
+              Insecure Direct Object Reference (IDOR), or Broken Object Level Authorization (BOLA), occurs when an application exposes a direct reference to an internal database object (like a dynamic invoice identifier) and fails to validate if the authenticated session owns that object.
+            </p>
+            <h3>1. The Logic Flaw</h3>
+            <p>
+              Many developers check if a user is validly logged in, but fail to check if that logged-in user belongs to the tenant partition owning the target file.
+            </p>
+            <div class="code-block">// VULNERABLE CODE (Express Route)
+app.get('/api/tenants/:tenantId/documents/:docId', (req, res) => {
+  const document = DB.documents[req.params.tenantId].find(d => d.docId === req.params.docId);
+  res.json({ document }); // ❌ Fails to check if req.user.tenantId matches req.params.tenantId!
+});</div>
+            <div class="mitigation-box">
+              <div class="mitigation-title">️ Remediation Blueprint</div>
+              <p style="margin: 0; font-size: 14px;">
+                Always implement vertical and horizontal authorization boundaries. Verify that the authenticated session's tenant matches the requested tenant object before querying database partitions.
+              </p>
+            </div>
+          </div>
+
+          <!-- Vulnerability 2: JWT Key Confusion -->
+          <div class="manual-section">
+            <h2> Cryptographic Algorithm Key Confusion</h2>
+            <div class="vuln-badge">OWASP A02:2021 - Cryptographic Failures</div>
+            <p>
+              Key Confusion attacks trick an authentication middleware into verifying an asymmetric token (signed by a private key via `RS256`) using a symmetric HMAC algorithm (`HS256`).
+            </p>
+            <h3>1. Exploit Mechanism</h3>
+            <p>
+              In an asymmetric configuration, the server verifies signatures using its public key PEM file. If an attacker swaps the token's header `alg` from `RS256` to `HS256`, a naive verification library will process the signature as an HMAC token. It uses the server's public key string (which is publicly available) as the symmetric HMAC secret key!
+            </p>
+            <div class="code-block">// VULNERABLE ALGORITHM ROUTING
+if (header.alg === 'HS256') {
+  // ❌ Interprets asymmetric public key as symmetric HMAC key bytes!
+  const expected = crypto.createHmac('sha256', publicKeyPem).update(unsigned).digest();
+}</div>
+            <div class="mitigation-box">
+              <div class="mitigation-title">️ Remediation Blueprint</div>
+              <p style="margin: 0; font-size: 14px;">
+                Strictly define the allowed algorithms list in the verification options (e.g. force `algorithms: ['RS256']`), preventing algorithm header hijacking during verification lifecycles.
+              </p>
+            </div>
+          </div>
+
+          <!-- Vulnerability 3: Race Conditions -->
+          <div class="manual-section">
+            <h2> Concurrency Race Conditions (TOCTOU)</h2>
+            <div class="vuln-badge">OWASP A04:2021 - Insecure Design</div>
+            <p>
+              Time of Check to Time of Use (TOCTOU) race conditions occur when a system verifies a condition (e.g. check if a coupon has already been redeemed) and then applies a state change, but does so without atomic locking operations.
+            </p>
+            <h3>1. The Timing Window</h3>
+            <p>
+              When a request sleeps or processes database reads asynchronously, a narrow microsecond delay is created. By firing multiple parallel requests concurrently (e.g. via `Promise.all`), all requests check the state before any have updated it, successfully passing the redemption filter multiple times!
+            </p>
+            <div class="code-block">// VULNERABLE ASYNC LEDGER
+if (redeemedCoupons.has(coupon)) return error();
+await sleep(100); // ❌ Asynchronous processing gap
+balance += 50;
+redeemedCoupons.add(coupon);</div>
+            <div class="mitigation-box">
+              <div class="mitigation-title">️ Remediation Blueprint</div>
+              <p style="margin: 0; font-size: 14px;">
+                Use transactional database locks (`SELECT ... FOR UPDATE` or transactional commits) or atomic check-and-set operations to ensure that status checks and modifications are executed in a single atomic sequence.
+              </p>
+            </div>
+          </div>
+
+          <!-- Vulnerability 4: Prototype Pollution RCE -->
+          <div class="manual-section">
+            <h2> Prototype Pollution to Remote Code Execution (RCE)</h2>
+            <div class="vuln-badge">OWASP A08:2021 - Software and Data Integrity Failures</div>
+            <p>
+              Prototype Pollution is a JavaScript-specific vulnerability where recursive cloning or object merge functions fail to sanitize utility property keys like `__proto__` or `constructor.prototype`.
+            </p>
+            <h3>1. Global Object Contamination</h3>
+            <p>
+              By inserting properties into the polluted prototype object, the attacker modifies the attributes of all JavaScript objects globally.
+            </p>
+            <h3>2. Escalating to RCE</h3>
+            <p>
+              When templates (such as `ejs` or `lodash`) compile layouts, they evaluate options object keys dynamically. By polluting global options (e.g. `client: true`, and overriding `escapeFunction` with a custom shell statement), EJS will execute the custom code when compile rendering is triggered.
+            </p>
+            <div class="code-block">// INJECTED PROTO POLLUTION
+{
+  "__proto__": {
+    "client": true,
+    "escapeFunction": "global.process.mainModule.require('child_process').execSync('cat flag.txt')"
+  }
+}</div>
+            <div class="mitigation-box">
+              <div class="mitigation-title">️ Remediation Blueprint</div>
+              <p style="margin: 0; font-size: 14px;">
+                Strictly prevent key merging of prototype attributes. Use `Object.create(null)` for simple configuration sets, or use robust validation schemas like Joi/Zod to strip unsafe keys.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Tab switcher controller
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      
+      if (tabName === 'dashboard') {
+        document.getElementById('nav-dashboard').classList.add('active');
+        document.getElementById('dashboard-view').style.display = 'block';
+        document.getElementById('repeater-view').style.display = 'none';
+        document.getElementById('manual-view').style.display = 'none';
+      } else if (tabName === 'repeater') {
+        document.getElementById('nav-repeater').classList.add('active');
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('repeater-view').style.display = 'block';
+        document.getElementById('manual-view').style.display = 'none';
+        loadRepeaterTemplate();
+      } else if (tabName === 'manual') {
+        document.getElementById('nav-manual').classList.add('active');
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('repeater-view').style.display = 'none';
+        document.getElementById('manual-view').style.display = 'block';
+      }
+    }
+
+    // Load active Security Mode on startup
+    async function loadSecurityMode() {
+      try {
+        const res = await fetch('/api/settings/security-mode');
+        const data = await res.json();
+        const checkbox = document.getElementById('security-mode-checkbox');
+        const indicator = document.getElementById('shield-indicator');
+        
+        if (data.securityMode === 'secure') {
+          checkbox.checked = true;
+          indicator.innerText = 'SECURE';
+          indicator.className = 'shield-badge shield-secure';
+        } else {
+          checkbox.checked = false;
+          indicator.innerText = 'VULNERABLE';
+          indicator.className = 'shield-badge shield-vulnerable';
+        }
+      } catch (err) {}
+    }
+
+    // Toggle active Security Mode
+    async function toggleSecurityMode() {
+      const checkbox = document.getElementById('security-mode-checkbox');
+      const mode = checkbox.checked ? 'secure' : 'vulnerable';
+      const indicator = document.getElementById('shield-indicator');
+      
+      try {
+        const res = await fetch('/api/settings/security-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        const data = await res.json();
+        if (data.securityMode === 'secure') {
+          indicator.innerText = 'SECURE';
+          indicator.className = 'shield-badge shield-secure';
+        } else {
+          indicator.innerText = 'VULNERABLE';
+          indicator.className = 'shield-badge shield-vulnerable';
+        }
+      } catch (err) {
+        alert('Failed to toggle security shield.');
+      }
+    }
+
+    // Load standard templates inside Repeater editor
+    function loadRepeaterTemplate() {
+      const template = document.getElementById('repeater-template').value;
+      const editor = document.getElementById('repeater-editor-textarea');
+      const token = document.getElementById('token-display').innerText;
+
+      if (template === 'announcements') {
+        editor.value = 
+`GET /api/announcements HTTP/1.1
+Host: localhost:30040
+Cookie: auth_token=${token}
+Content-Type: application/json`;
+      } else if (template === 'idor') {
+        editor.value = 
+`GET /api/tenants/tenant_a_19df94c2/documents/doc_admin_f8c12a84 HTTP/1.1
+Host: localhost:30040
+Cookie: auth_token=${token}
+Content-Type: application/json`;
+      } else if (template === 'settings') {
+        editor.value = 
+`POST /api/settings HTTP/1.1
+Host: localhost:30040
+Cookie: auth_token=${token}
+Content-Type: application/json
+
+{
+  "config": {
+    "theme": "cyberpunk"
+  }
+}`;
+      } else if (template === 'coupon') {
+        editor.value = 
+`POST /api/apply-coupon HTTP/1.1
+Host: localhost:30040
+Cookie: auth_token=${token}
+Content-Type: application/json
+
+{
+  "coupon": "WELCOME50"
+}`;
+      }
+    }
+
+    // Burp Repeater Request Sender & Parser
+    async function sendRepeaterRequest() {
+      const rawText = document.getElementById('repeater-editor-textarea').value;
+      const resBox = document.getElementById('repeater-response-pre');
+      resBox.innerText = 'Transmitting raw request stream...';
+
+      try {
+        const lines = rawText.split('\n');
+        const reqLine = lines[0].split(' ');
+        const method = reqLine[0];
+        const path = reqLine[1];
+
+        // Parse headers and body
+        let headers = {};
+        let bodyLines = [];
+        let isBody = false;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line === '') {
+            isBody = true;
+            continue;
+          }
+          if (!isBody) {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+              const name = line.substring(0, colonIndex).trim();
+              const val = line.substring(colonIndex + 1).trim();
+              headers[name] = val;
+            }
+          } else {
+            bodyLines.push(lines[i]);
+          }
+        }
+
+        const bodyStr = bodyLines.join('\n').trim();
+
+        // Perform dynamic call
+        const fetchOptions = {
+          method,
+          headers
+        };
+
+        if (method === 'POST' && bodyStr !== '') {
+          fetchOptions.body = bodyStr;
+        }
+
+        const start = Date.now();
+        const res = await fetch(path, fetchOptions);
+        const dataText = await res.text();
+        const duration = Date.now() - start;
+
+        // Print raw response headers and data
+        let resHeadersStr = `HTTP/1.1 ${res.status} ${res.statusText}\r\n`;
+        resHeadersStr += `Duration: ${duration}ms\r\n`;
+        res.headers.forEach((val, name) => {
+          resHeadersStr += `${name}: ${val}\r\n`;
+        });
+
+        resBox.innerText = `${resHeadersStr}\r\n${dataText}`;
+      } catch (err) {
+        resBox.innerText = `[REPEATER ERROR] Parsing or fetch transmission failed: ${err.message}`;
+      }
+    }
+
+    // Fetch profile balance
+    async function updateBalance() {
+      try {
+        const res = await fetch('/api/profile/balance');
+        const data = await res.json();
+        if (data.balance !== undefined) {
+          document.getElementById('balance-display').innerText = `$${data.balance}`;
+        }
+      } catch (err) {}
+    }
+
+    // Load active announcements
+    async function loadAnnouncements() {
+      try {
+        const res = await fetch('/api/announcements');
+        const data = await res.json();
+        const container = document.getElementById('announcements-container');
+        container.innerHTML = '';
+        data.announcements.forEach(a => {
+          const div = document.createElement('div');
+          div.className = 'announcement-item';
+          div.innerHTML = `
+            <div class="announcement-title"> ${a.title}</div>
+            <div style="color: var(--text-muted); font-size: 13px;">${a.content}</div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {}
+    }
+
+    // Search Inventory catalog via SQL Emulator (SQLi)
+    async function searchCatalog() {
+      const q = document.getElementById('catalog-search').value;
+      const resBox = document.getElementById('catalog-results');
+      resBox.innerText = 'Searching catalog...';
+      try {
+        const res = await fetch(`/api/catalog?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          resBox.innerText = JSON.stringify(data.results, null, 2);
+        } else {
+          resBox.innerText = '[] (No catalog items match your search parameter)';
+        }
+      } catch (err) {
+        resBox.innerText = 'Error querying catalog API.';
+      }
+    }
+
+    // Apply Coupon Standard Single flow
+    async function applyCouponSingle() {
+      const coupon = document.getElementById('coupon-code').value;
+      const resBox = document.getElementById('coupon-results');
+      resBox.innerText = 'Redeeming standard coupon...';
+      try {
+        const res = await fetch('/api/apply-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ coupon })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resBox.innerText = `Success: ${data.message}\nNew Balance: $${data.balance}`;
+          updateBalance();
+        } else {
+          resBox.innerText = `Error: ${data.error}`;
+        }
+      } catch (err) {
+        resBox.innerText = 'Network request failed.';
+      }
+    }
+
+    // Apply Coupon Concurrently (Race Condition)
+    async function applyCouponConcurrently() {
+      const coupon = document.getElementById('coupon-code').value;
+      const resBox = document.getElementById('coupon-results');
+      resBox.innerText = 'Triggering high-velocity asynchronous concurrency bursts...\n';
+      
+      try {
+        // Fire 8 parallel requests to hit the race condition window
+        const requests = Array.from({ length: 8 }, () => {
+          return fetch('/api/apply-coupon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ coupon })
+          });
+        });
+
+        const responses = await Promise.all(requests);
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const res of responses) {
+          const data = await res.json();
+          if (res.ok) {
+            successCount++;
+            resBox.innerText += `[+] Redeemed: Balance updated to $${data.balance}\n`;
+          } else {
+            failCount++;
+          }
+        }
+        resBox.innerText += `\n[Summary] Concurrency Complete. Successful claims: ${successCount}, Prevented claims: ${failCount}`;
+        updateBalance();
+      } catch (err) {
+        resBox.innerText += `\n[!] Asynchronous burst failed: ${err.message}`;
+      }
+    }
+
+    // Fetch document invoice via Archiver API (IDOR)
+    async function fetchDocument() {
+      const tenantId = document.getElementById('tenant-id').value;
+      const docId = document.getElementById('doc-id').value;
+      const resBox = document.getElementById('document-results');
+      resBox.innerText = 'Loading secure archiver partition...';
+      
+      try {
+        const res = await fetch(`/api/tenants/${tenantId}/documents/${docId}`);
+        const data = await res.json();
+        if (res.ok) {
+          resBox.innerText = `Document Loaded: ${data.document.name}\n\nContents:\n${data.document.content}`;
+        } else {
+          resBox.innerText = `Error [${res.status}]: ${data.error}`;
+        }
+      } catch (err) {
+        resBox.innerText = 'Network error fetching document.';
+      }
+    }
+
+    // Custom Dev settings override deep sync (Prototype Pollution)
+    async function syncSettings() {
+      const jsonText = document.getElementById('settings-json').value;
+      const resBox = document.getElementById('settings-results');
+      resBox.innerText = 'Syncing config properties...';
+
+      try {
+        const config = JSON.parse(jsonText);
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resBox.innerText = `[+] System settings synchronized successfully:\n${JSON.stringify(data.config, null, 2)}`;
+        } else {
+          resBox.innerText = `[!] Sync Rejected: ${data.error}`;
+        }
+      } catch (err) {
+        resBox.innerText = `[!] Invalid JSON Payload: ${err.message}`;
+      }
+    }
+
+    // Factory Reset State
+    async function resetState() {
+      const resBox = document.getElementById('settings-results');
+      resBox.innerText = 'Factory resetting sandbox state...';
+      try {
+        await fetch('/api/reset', { method: 'POST' });
+        resBox.innerText = 'Platform successfully reset.';
+        location.reload();
+      } catch (err) {}
+    }
+
+    // Copy Raw JWT Token to clipboard
+    function copyToken() {
+      const token = document.getElementById('token-display').innerText;
+      navigator.clipboard.writeText(token);
+      alert('SSO auth_token copied to clipboard!');
+    }
+
+    // Initialize display values
+    const cookies = document.cookie;
+    const match = cookies.match(/auth_token=([^;]+)/);
+    document.getElementById('token-display').innerText = match ? match[1] : 'No SSO Cookie set. Please reload page.';
+
+    updateBalance();
+    loadAnnouncements();
+    loadSecurityMode();
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 1. Fix branding ──
+  var brandIcon = document.querySelector('.brand-icon');
+  if (brandIcon && !brandIcon.textContent.trim()) brandIcon.textContent = 'HM';
+
+  var brand = document.querySelector('.brand');
+  if (brand && !brand.querySelector('.brand-title')) {
+    Array.from(brand.childNodes).forEach(function(n) {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = '';
+    });
+    var titleEl = document.createElement('div');
+    titleEl.className = 'brand-title';
+    titleEl.textContent = 'HackMeIfYouCan Portal';
+    titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
+    brand.appendChild(titleEl);
+  }
+
+  // ── 2. Detect layout type ──
+  var nativeAside = document.querySelector('aside');
+  var stageCards = document.querySelectorAll('.stage-card');
+  var stageBtns = document.querySelectorAll('.stage-btn');
+  var stages = stageCards.length > 0 ? stageCards : stageBtns;
+  var hasNativeSidebar = nativeAside && nativeAside.querySelector('.nav-list');
+
+  if (!hasNativeSidebar && stages.length === 0) return; // single-card lab, skip
+
+  // ── 3. Replace shield button with checkbox toggle ──
+  var oldShield = document.getElementById('shieldBtn') || document.querySelector('.shield-btn');
+  var headerEl = document.querySelector('header');
+  
+  // Check if header already has proper patch-control with checkbox
+  var existingPatch = headerEl ? headerEl.querySelector('.patch-control') : null;
+  var existingCheckbox = existingPatch ? existingPatch.querySelector('input[type="checkbox"]') : null;
+  
+  if (headerEl && !existingCheckbox) {
+    var patchControl = document.createElement('div');
+    patchControl.className = 'hm-patch-control';
+    patchControl.innerHTML = '<div class="hm-patch-label">REMEDIATION SHIELD</div>' +
+      '<div id="hm-shield-indicator" class="hm-shield-badge hm-shield-vulnerable">VULNERABLE</div>' +
+      '<label class="hm-patch-switch"><input type="checkbox" id="hm-security-checkbox"><span class="hm-patch-slider"></span></label>';
+
+    if (oldShield && oldShield.parentNode) {
+      oldShield.parentNode.replaceChild(patchControl, oldShield);
+    } else if (existingPatch) {
+      existingPatch.parentNode.replaceChild(patchControl, existingPatch);
+    } else {
+      headerEl.appendChild(patchControl);
+    }
+
+    var hmCheckbox = document.getElementById('hm-security-checkbox');
+    var hmIndicator = document.getElementById('hm-shield-indicator');
+
+    function hmSyncShield() {
+      fetch('/api/settings/security-mode')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.securityMode === 'secure') {
+            hmCheckbox.checked = true;
+            hmIndicator.textContent = 'SECURE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-secure';
+          } else {
+            hmCheckbox.checked = false;
+            hmIndicator.textContent = 'VULNERABLE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-vulnerable';
+          }
+        }).catch(function(){});
+    }
+
+    hmCheckbox.addEventListener('change', function() {
+      var mode = hmCheckbox.checked ? 'secure' : 'vulnerable';
+      fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).then(function() { hmSyncShield(); }).catch(function(){});
+    });
+
+    hmSyncShield();
+  } else if (existingCheckbox) {
+    // Existing patch control with checkbox — just hide old shield-btn if separate
+    if (oldShield && oldShield !== existingPatch) oldShield.style.display = 'none';
+    // Hide extra elements in header (badges etc) — keep only brand + patch
+    var headerChildren = headerEl.children;
+    for (var i = 0; i < headerChildren.length; i++) {
+      var child = headerChildren[i];
+      if (!child.classList.contains('brand') && !child.classList.contains('patch-control') &&
+          !child.classList.contains('hm-patch-control') && !child.querySelector('.patch-control')) {
+        // Hide extra divs that wrap badge + patch-control
+        if (child.querySelector('.patch-control')) continue;
+        if (child.classList.contains('badge')) child.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Build unified sidebar ──
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'hm-sidebar';
+  var navList = document.createElement('ul');
+  navList.className = 'nav-list';
+
+  if (hasNativeSidebar) {
+    // NATIVE: Convert existing nav-items
+    var existingNavItems = nativeAside.querySelectorAll('.nav-item');
+    existingNavItems.forEach(function(item, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (item.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      li.textContent = item.textContent.trim();
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        item.click(); // trigger original
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  } else {
+    // CONVERTED: Build from stage-cards/buttons
+    stages.forEach(function(stage, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (stage.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      var nameEl = stage.querySelector('.stage-name') || stage.querySelector('span:first-child');
+      var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+      var name = nameEl ? nameEl.textContent.trim() : ('Stage ' + (idx + 1));
+      var statusText = statusEl ? statusEl.textContent.trim() : 'UNSOLVED';
+      var isSolved = statusText.toUpperCase() === 'SOLVED';
+      li.innerHTML = name + '<span class="solve-tag ' + (isSolved ? 'solved' : 'unsolved') + '">' + statusText + '</span>';
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        stage.click();
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  }
+
+  sidebar.appendChild(navList);
+  sidebar.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && e.target === sidebar) {
+      sidebar.classList.toggle('active-menu');
+    }
+  });
+
+  // ── 5. Build workspace ──
+  var workspace = document.createElement('div');
+  workspace.className = 'hm-workspace';
+
+  if (hasNativeSidebar) {
+    // NATIVE: move the existing workspace/main content
+    var existingWorkspace = document.querySelector('.workspace') || document.querySelector('main');
+    if (existingWorkspace) {
+      // Clone all children into new workspace
+      while (existingWorkspace.firstChild) {
+        workspace.appendChild(existingWorkspace.firstChild);
+      }
+    }
+  } else {
+    // CONVERTED: gather panels
+    var mainEl = document.querySelector('main');
+    var containerEl = mainEl || document.querySelector('.container');
+    if (containerEl) {
+      var panels = containerEl.querySelectorAll('.panel, .logger-panel');
+      panels.forEach(function(panel) {
+        var clone = panel.cloneNode(true);
+        var sg = clone.querySelector('.stages-grid');
+        if (sg) sg.remove();
+        var sh = clone.querySelector('.stages-header');
+        if (sh) sh.remove();
+        var ss = clone.querySelector('.stage-selector');
+        if (ss) ss.remove();
+        workspace.appendChild(clone);
+      });
+      if (workspace.children.length === 0) {
+        Array.from(containerEl.children).forEach(function(child) {
+          if (child.tagName !== 'HEADER') workspace.appendChild(child.cloneNode(true));
+        });
+      }
+    }
+  }
+
+  // ── 6. Insert new layout ──
+  var newContainer = document.createElement('div');
+  newContainer.className = 'hm-converted-container';
+  newContainer.appendChild(sidebar);
+  newContainer.appendChild(workspace);
+
+  document.body.classList.add('hm-converted');
+
+  if (headerEl && headerEl.nextSibling) {
+    headerEl.parentNode.insertBefore(newContainer, headerEl.nextSibling);
+  } else {
+    document.body.appendChild(newContainer);
+  }
+
+  // ── 7. Observer for solve status sync ──
+  if (!hasNativeSidebar && stages.length > 0) {
+    var observer = new MutationObserver(function() {
+      stages.forEach(function(stage, idx) {
+        var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+        if (statusEl) {
+          var navItem = navList.querySelector('[data-stage-idx="' + idx + '"]');
+          if (navItem) {
+            var tag = navItem.querySelector('.solve-tag');
+            if (tag) {
+              var txt = statusEl.textContent.trim();
+              tag.textContent = txt;
+              tag.className = 'solve-tag ' + (txt.toUpperCase() === 'SOLVED' ? 'solved' : 'unsolved');
+            }
+          }
+        }
+      });
+    });
+    stages.forEach(function(stage) {
+      observer.observe(stage, { attributes: true, childList: true, subtree: true });
+    });
+  }
+})();
+</script>
+
+</body>
+
+</html>

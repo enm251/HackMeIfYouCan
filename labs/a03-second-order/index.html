@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CyberLabs - Second-Order SQL Injection</title>
+  <style>
+    body { background-color: #1a0f1a; color: #f5f5f5; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;
+      font-size: 20px;
+    }
+    .card { background-color: #2b122c; border: 1px solid #d45ddb; border-radius: 8px; padding: 2rem; width: 400px; box-shadow: none; }
+    h2 { color: #f896ff; text-align: center; margin-top: 0; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; margin-bottom: 0.3rem; font-size: 0.85rem; color: #f896ff; }
+    input { width: 100%; padding: 0.5rem; background: #1a0f1a; border: 1px solid #d45ddb; border-radius: 4px; color: #fff; box-sizing: border-box; }
+    button { width: 100%; padding: 0.6rem; background: #d45ddb; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 0.5rem; }
+    button:hover { background: #f896ff; box-shadow: none; }
+    .toggle { text-align: center; margin-top: 1rem; font-size: 0.8rem; color: #8e8090; cursor: pointer; }
+    .toggle:hover { color: #f896ff; }
+    .results { margin-top: 1rem; font-family: monospace; font-size: 0.8rem; background: #1a0f1a; padding: 0.75rem; border-radius: 4px; border: 1px solid #d45ddb; }
+    .success { color: #2ecc71; }
+    .error { color: #e74c3c; }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 id="card-title">USER REGISTRATION</h2>
+    <p style="font-size:0.75rem; color:#8e8090; margin-bottom: 1.5rem; text-align:center;">
+      This portal uses safe parameterized inserts on sign-up. However, retrieved database usernames are queried insecurely inside profile views. Exploitation leads to second-order takeover.
+    </p>
+    
+    <!-- Register View -->
+    <div id="register-view">
+      <form id="reg-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="reg-user" required placeholder="attacker">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" required placeholder="attacker@corp.local">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-pass" required placeholder="password">
+        </div>
+        <button type="submit">CREATE ACCOUNT</button>
+      </form>
+      <div class="toggle" onclick="showLogin()">Already have an account? Login</div>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" style="display:none;">
+      <form id="log-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="log-user" required placeholder="attacker">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="log-pass" required placeholder="password">
+        </div>
+        <button type="submit">SIGN IN</button>
+      </form>
+      <div class="toggle" onclick="showRegister()">Need an account? Register</div>
+    </div>
+
+    <!-- Profile View -->
+    <div id="profile-view" style="display:none;">
+      <div class="results" id="profile-box"></div>
+      <button onclick="showLogin()" style="background:#e74c3c; color:#fff;">LOGOUT</button>
+    </div>
+
+    <div id="msg" class="results" style="display:none; margin-top: 1rem;"></div>
+  </div>
+
+  <script>
+    let token = '';
+
+    function showLogin() {
+      document.getElementById('card-title').innerText = 'USER LOGIN';
+      document.getElementById('register-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'block';
+      document.getElementById('profile-view').style.display = 'none';
+    }
+
+    function showRegister() {
+      document.getElementById('card-title').innerText = 'USER REGISTRATION';
+      document.getElementById('register-view').style.display = 'block';
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('profile-view').style.display = 'none';
+    }
+
+    function showProfile() {
+      document.getElementById('card-title').innerText = 'USER PROFILE';
+      document.getElementById('register-view').style.display = 'none';
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('profile-view').style.display = 'block';
+    }
+
+    function showMsg(message, isError = false) {
+      const msgDiv = document.getElementById('msg');
+      msgDiv.style.display = 'block';
+      msgDiv.className = isError ? 'results error' : 'results success';
+      msgDiv.innerText = message;
+    }
+
+    // Register Handler
+    document.getElementById('reg-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('reg-user').value;
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-pass').value;
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showMsg("Registration successful! Proceed to login.");
+          showLogin();
+        } else {
+          showMsg(data.error, true);
+        }
+      } catch(err) {
+        showMsg("Network connection error", true);
+      }
+    });
+
+    // Login Handler
+    document.getElementById('log-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('log-user').value;
+      const password = document.getElementById('log-pass').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          token = data.token;
+          showMsg("Logged in successfully! Loading profile...");
+          showProfile();
+          loadProfile();
+        } else {
+          showMsg(data.error, true);
+        }
+      } catch(err) {
+        showMsg("Network connection error", true);
+      }
+    });
+
+    // Load Profile Info
+    async function loadProfile() {
+      const box = document.getElementById('profile-box');
+      box.innerHTML = 'Executing Second-Order query...';
+      
+      try {
+        const res = await fetch('/api/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          box.innerHTML = `<strong>CN:</strong> ${data.profile.username}<br>` +
+            `<strong>Email:</strong> ${data.profile.email}<br>` +
+            `<strong>Role:</strong> ${data.profile.role}<br>` +
+            (data.profile.flag ? `<br><strong class="success">Flag:</strong> <code style="color:#fff;">${data.profile.flag}</code>` : '');
+        } else {
+          box.innerHTML = `<span class="error">Error: ${data.error}</span>`;
+        }
+      } catch(err) {
+        box.innerHTML = '<span class="error">Failed to query profile</span>';
+      }
+    }
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

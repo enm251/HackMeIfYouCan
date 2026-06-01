@@ -1,0 +1,1 @@
+FLAG{ejs_output_function_injection}

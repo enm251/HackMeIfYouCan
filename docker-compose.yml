@@ -1,0 +1,421 @@
+version: '3.8'
+
+services:
+  # Main Portal Dashboard
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: cyberlabs_dashboard
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dashboard/data:/app/data
+    networks:
+      - vuln-network
+    restart: unless-stopped
+
+  # --- OWASP A01: Broken Access Control ---
+  lab_a01_idor:
+    build:
+      context: ./labs/a01-idor
+    container_name: lab_a01_idor
+    ports:
+      - "30001:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a01_path_traversal:
+    build:
+      context: ./labs/a01-path-traversal
+    container_name: lab_a01_path_traversal
+    ports:
+      - "30003:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a01_privesc:
+    build:
+      context: ./labs/a01-privesc
+    container_name: lab_a01_privesc
+    ports:
+      - "30002:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a02_weak_crypto:
+    build:
+      context: ./labs/a02-weak-crypto
+    container_name: lab_a02_weak_crypto
+    ports:
+      - "30004:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_sqli_union:
+    build:
+      context: ./labs/a03-sqli-union
+    container_name: lab_a03_sqli_union
+    ports:
+      - "30005:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_sqli_blind:
+    build:
+      context: ./labs/a03-sqli-blind
+    container_name: lab_a03_sqli_blind
+    ports:
+      - "30006:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_cmd_injection:
+    build:
+      context: ./labs/a03-cmd-injection
+    container_name: lab_a03_cmd_injection
+    ports:
+      - "30007:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_ssti:
+    build:
+      context: ./labs/a03-ssti
+    container_name: lab_a03_ssti
+    ports:
+      - "30008:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a04_insecure_design:
+    build:
+      context: ./labs/a04-insecure-design
+    container_name: lab_a04_insecure_design
+    ports:
+      - "30009:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a05_xxe:
+    build:
+      context: ./labs/a05-xxe
+    container_name: lab_a05_xxe
+    ports:
+      - "30010:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a06_outdated_components:
+    build:
+      context: ./labs/a06-outdated-components
+    container_name: lab_a06_outdated_components
+    ports:
+      - "30012:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a07_jwt_bypass:
+    build:
+      context: ./labs/a07-jwt-bypass
+    container_name: lab_a07_jwt_bypass
+    ports:
+      - "30013:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a08_deserialization_python:
+    build:
+      context: ./labs/a08-deserialization-python
+    container_name: lab_a08_deserialization_python
+    ports:
+      - "30014:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a09_log_injection:
+    build:
+      context: ./labs/a09-log-injection
+    container_name: lab_a09_log_injection
+    ports:
+      - "30015:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a10_ssrf:
+    build:
+      context: ./labs/a10-ssrf
+    container_name: lab_a10_ssrf
+    ports:
+      - "30016:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  # --- New Labs: Phase 2 Expansion ---
+  lab_a01_cors:
+    build:
+      context: ./labs/a01-cors
+    container_name: lab_a01_cors
+    ports:
+      - "30017:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_sqli_time:
+    build:
+      context: ./labs/a03-sqli-time
+    container_name: lab_a03_sqli_time
+    ports:
+      - "30018:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a05_git:
+    build:
+      context: ./labs/a05-git
+    container_name: lab_a05_git
+    ports:
+      - "30019:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a07_oauth:
+    build:
+      context: ./labs/a07-oauth
+    container_name: lab_a07_oauth
+    ports:
+      - "30020:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a10_ssrf_bypass:
+    build:
+      context: ./labs/a10-ssrf-bypass
+    container_name: lab_a10_ssrf_bypass
+    ports:
+      - "30021:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a07_brute_force:
+    build:
+      context: ./labs/a07-brute-force
+    container_name: lab_a07_brute_force
+    ports:
+      - "30022:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a08_node_serialize:
+    build:
+      context: ./labs/a08-node-serialize
+    container_name: lab_a08_node_serialize
+    ports:
+      - "30023:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a09_log_xss:
+    build:
+      context: ./labs/a09-log-xss
+    container_name: lab_a09_log_xss
+    ports:
+      - "30024:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_nosql:
+    build:
+      context: ./labs/a03-nosql
+    container_name: lab_a03_nosql
+    ports:
+      - "30025:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_ldap:
+    build:
+      context: ./labs/a03-ldap
+    container_name: lab_a03_ldap
+    ports:
+      - "30026:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_second_order:
+    build:
+      context: ./labs/a03-second-order
+    container_name: lab_a03_second_order
+    ports:
+      - "30027:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_xpath:
+    build:
+      context: ./labs/a03-xpath
+    container_name: lab_a03_xpath
+    ports:
+      - "30028:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a03_argument_injection:
+    build:
+      context: ./labs/a03-argument-injection
+    container_name: lab_a03_argument_injection
+    ports:
+      - "30029:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a08_prototype_pollution:
+    build:
+      context: ./labs/a08-prototype-pollution
+    container_name: lab_a08_prototype_pollution
+    ports:
+      - "30030:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a02_jwt_confusion:
+    build:
+      context: ./labs/a02-jwt-confusion
+    container_name: lab_a02_jwt_confusion
+    ports:
+      - "30031:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a06_request_smuggling:
+    build:
+      context: ./labs/a06-request-smuggling
+    container_name: lab_a06_request_smuggling
+    ports:
+      - "30032:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_a04_race_condition:
+    build:
+      context: ./labs/a04-race-condition
+    container_name: lab_a04_race_condition
+    ports:
+      - "30033:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+  lab_cybercorp_portal:
+    build:
+      context: ./labs/cybercorp-portal
+    container_name: lab_cybercorp_portal
+    ports:
+      - "30040:3000"
+    networks:
+      - vuln-network
+    profiles:
+      - labs
+    restart: "no"
+
+networks:
+  vuln-network:
+    name: cyberlabs_network
+    driver: bridge
+

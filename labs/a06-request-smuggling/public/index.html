@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Request Smuggling Laboratory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #000000;
+      --panel-bg: rgba(12, 12, 12, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-glow: none;
+      --accent: #10b981;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 20px;
+    }
+
+    /* Ambient background glows */
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+      top: -200px;
+      left: -200px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow-accent {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, rgba(0, 0, 0, 0) 70%);
+      bottom: -150px;
+      right: -150px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header styling */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 2.5rem;
+      height: 2.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .brand h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .brand p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .shield-controller {
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .shield-status-indicator {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      background-color: var(--danger);
+      box-shadow: none;
+      transition: all 0.3s ease;
+    }
+
+    .shield-status-indicator.secure {
+      background-color: var(--success);
+      box-shadow: none;
+    }
+
+    .toggle-btn {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      border: none;
+      color: white;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.secure {
+      background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    /* Main Dashboard Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 8fr 4fr;
+      gap: 2rem;
+    }
+
+    .workspace-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+
+    /* Stage Selector Styles */
+    .stages-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stage-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .stage-card.active {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .stage-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .stage-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .stage-card.solved .status-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    /* Challenge Panel */
+    .challenge-panel h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .challenge-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .pill-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .pill-badge span {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Workspace Content Panels */
+    .tabs-nav {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 1.25rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 0.25rem 0.75rem 0.25rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Code Constructor UI */
+    .editor-container {
+      position: relative;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid var(--glass-border);
+      background: rgba(0, 0, 0, 0.3);
+      margin-bottom: 1rem;
+    }
+
+    .editor-header {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .editor-title {
+      font-size: 0.75rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .template-selector {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .raw-textarea {
+      width: 100%;
+      height: 240px;
+      background: transparent;
+      border: none;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 1rem;
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .action-button-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #0284c7);
+      color: white;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Result Console */
+    .console-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #10b981;
+      min-height: 100px;
+      max-height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .console-box.error {
+      color: var(--danger);
+    }
+
+    /* Connection logger panel (right column) */
+    .logger-panel {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 8rem);
+    }
+
+    .logger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .logger-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .logger-content {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .log-item {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      padding-bottom: 0.5rem;
+    }
+
+    .log-meta {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .log-method {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .log-path {
+      color: var(--text);
+    }
+
+    .log-status {
+      font-weight: 700;
+    }
+
+    .log-status.success {
+      color: var(--success);
+    }
+
+    .log-status.error {
+      color: var(--danger);
+    }
+
+    .log-body {
+      color: #38bdf8;
+      padding: 0.25rem;
+      background: rgba(56, 189, 248, 0.05);
+      border-radius: 4px;
+      margin-top: 0.25rem;
+      font-size: 20px;
+    }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  
+
+/* Make the left panel (stages panel) look like a sidebar */
+main > .panel:first-child {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+  gap: 0.5rem !important;
+}
+/* Hide the stages-header and desc-box in sidebar mode */
+main > .panel:first-child > .stages-header {
+  display: none !important;
+}
+main > .panel:first-child > .desc-box {
+  display: none !important;
+}
+/* Make input/button/output fields inside left panel hidden (we show them via desc-box in workspace) */
+main > .panel:first-child > .field-group,
+main > .panel:first-child > .btn {
+  display: none !important;
+}
+/* Transform stages-grid from horizontal to vertical */
+.stages-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  grid-template-columns: unset !important;
+}
+/* Make stage-cards look like nav-items */
+.stage-card {
+  text-align: left !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+.stage-card:hover {
+  background: rgba(255,255,255,0.03) !important;
+  transform: none !important;
+}
+.stage-card.active {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+.stage-card .stage-num {
+  display: none !important;
+}
+.stage-card .stage-name {
+  font-size: 0.9rem !important;
+  color: var(--text-muted) !important;
+  font-weight: 600 !important;
+}
+.stage-card.active .stage-name {
+  color: var(--primary) !important;
+}
+.stage-card .stage-status {
+  font-size: 0.65rem !important;
+  margin-top: 0 !important;
+  margin-left: auto !important;
+}
+/* Make the right panel (logger) look like workspace */
+main > .panel:last-child,
+main > .panel.logger-panel,
+main > .logger-panel {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+  min-height: 500px !important;
+}
+
+/* === HEADER BRANDING FIX === */
+header {
+  padding: 1.5rem 2rem !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  border-radius: 8px !important;
+}
+/* Shield button styling to match reference */
+.shield-btn {
+  padding: 6px 16px !important;
+  border-radius: 30px !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+}
+
+/* Responsive: on small screens, make sidebar collapse */
+@media (max-width: 1024px) {
+  main {
+    grid-template-columns: 1fr !important;
+  }
+  main > .panel:first-child {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+  }
+  .stages-grid {
+    display: none !important;
+  }
+  main > .panel:first-child.active-stages .stages-grid {
+    display: flex !important;
+  }
+  main > .panel:first-child::before {
+    content: "☰ Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary) !important;
+    text-align: center !important;
+    cursor: pointer !important;
+  }
+}
+
+
+
+
+
+/* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
+.hm-converted-container {
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  flex-grow: 1;
+  width: 100%;
+}
+.hm-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hm-sidebar .nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hm-sidebar .nav-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.hm-sidebar .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text, #f3f4f6);
+}
+.hm-sidebar .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+.hm-sidebar .nav-item .solve-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hm-sidebar .nav-item .solve-tag.solved { color: var(--success, #10b981); }
+.hm-sidebar .nav-item .solve-tag.unsolved { color: #f87171; }
+.hm-workspace {
+  background: var(--panel-bg, rgba(12, 12, 12, 0.95));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 500px;
+}
+/* Patch control (reference style) */
+.hm-patch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.hm-patch-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+}
+.hm-shield-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.hm-shield-vulnerable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.hm-shield-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.hm-patch-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.hm-patch-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.hm-patch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 34px;
+}
+.hm-patch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.hm-patch-switch input:checked + .hm-patch-slider {
+  background-color: var(--success, #10b981);
+}
+.hm-patch-switch input:checked + .hm-patch-slider:before {
+  transform: translateX(22px);
+}
+
+/* Header fixes */
+header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, var(--primary, #10b981), var(--accent, #10b981)) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+}
+.brand-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to right, var(--primary, #10b981), #fff) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hide old layout elements that get replaced by JS */
+body.hm-converted main,
+body.hm-converted > .container { display: none !important; }
+/* But show the new container */
+body.hm-converted .hm-converted-container { display: grid !important; }
+
+/* Hide old shield buttons when converted */
+body.hm-converted .shield-btn { display: none !important; }
+body.hm-converted header > .shield-btn { display: none !important; }
+
+/* Responsive: sidebar collapses on small screens */
+@media (max-width: 1024px) {
+  .hm-converted-container {
+    grid-template-columns: 1fr !important;
+    margin: 1rem auto !important;
+  }
+  .hm-sidebar {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+  .hm-sidebar::before {
+    content: "\2630  Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary, #10b981) !important;
+    text-align: center !important;
+  }
+  .hm-sidebar .nav-list {
+    display: none !important;
+  }
+  .hm-sidebar.active-menu .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #000000 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    gap: 6px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="bg-glow-accent"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">HM</div>
+        <div>
+          <div class="brand-title">HackMeIfYouCan Portal</div>
+          <p>HTTP Pipeline De-synchronization & Proxy Abuse</p>
+        </div>
+      </div>
+
+      <div class="shield-controller">
+        <div class="shield-status-indicator" id="shield-indicator"></div>
+        <span style="font-size: 0.85rem; font-weight: 500;" id="shield-label">Shield: Vulnerable</span>
+        <button class="toggle-btn" id="shield-toggle" onclick="toggleShield()">Toggle Shield</button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Left side: workspace -->
+      <div class="workspace-panel">
+        <!-- Stages selector -->
+        <div class="stages-selector-grid">
+          <div class="stage-card active" id="stage-card-1" onclick="selectStage(1)">
+            <div class="stage-num">Stage 1</div>
+            <div class="stage-name">CL.TE Poisoning</div>
+            <span class="status-badge" id="badge-1">Unsolved</span>
+          </div>
+          <div class="stage-card" id="stage-card-2" onclick="selectStage(2)">
+            <div class="stage-num">Stage 2</div>
+            <div class="stage-name">TE.CL Bypass</div>
+            <span class="status-badge" id="badge-2">Unsolved</span>
+          </div>
+          <div class="stage-card" id="stage-card-3" onclick="selectStage(3)">
+            <div class="stage-num">Stage 3</div>
+            <div class="stage-name">CL.CL Header</div>
+            <span class="status-badge" id="badge-3">Unsolved</span>
+          </div>
+          <div class="stage-card" id="stage-card-4" onclick="selectStage(4)">
+            <div class="stage-num">Stage 4</div>
+            <div class="stage-name">Cache Poisoning</div>
+            <span class="status-badge" id="badge-4">Unsolved</span>
+          </div>
+        </div>
+
+        <!-- Description Box -->
+        <div class="card challenge-panel">
+          <h3 id="challenge-title">CL.TE Pipeline Deserialization</h3>
+          <div class="badge-bar">
+            <div class="pill-badge">Vulnerability: <span style="color: var(--danger)">CL.TE Smuggling</span></div>
+            <div class="pill-badge">Target Port: <span>3000</span></div>
+            <div class="pill-badge">Complexity: <span id="challenge-complexity">Easy</span></div>
+          </div>
+          <p class="challenge-desc" id="challenge-desc">
+            The front-end proxy server relies on Content-Length to determine the boundary of incoming requests, while the back-end parser reads the Transfer-Encoding: chunked header. Construct a smuggling request sequence where the back-end leaves a complete next query segment inside the pipeline socket buffer.
+          </p>
+        </div>
+
+        <!-- Workspace Tabs & Interaction Area -->
+        <div class="card">
+          <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('constructor')">Request Constructor</button>
+            <button class="tab-btn" onclick="switchTab('ledger')">Captured Ledger</button>
+          </div>
+
+          <!-- TAB 1: Constructor -->
+          <div id="tab-constructor" class="tab-pane active">
+            <div class="editor-container">
+              <div class="editor-header">
+                <span class="editor-title">RAW TCP HTTP payload</span>
+                <select class="template-selector" id="template-selector" onchange="loadTemplate()">
+                  <option value="clte">CL.TE Template</option>
+                  <option value="tecl">TE.CL Template</option>
+                  <option value="clcl">CL.CL Template</option>
+                  <option value="cache">Cache Poisoning Template</option>
+                </select>
+              </div>
+              <textarea class="raw-textarea" id="raw-stream" spellcheck="false">POST / HTTP/1.1
+Host: localhost:3000
+Content-Length: 90
+Transfer-Encoding: chunked
+
+0
+
+POST /api/capture HTTP/1.1
+Host: localhost
+Content-Length: 5
+
+x=123</textarea>
+            </div>
+
+            <div class="action-button-group" style="margin-bottom: 1rem;">
+              <button class="btn btn-primary" onclick="sendSmugglePayload()">Transmit Pipeline Stream</button>
+              <button class="btn btn-secondary" onclick="checkCapturedFlag()">Retrieve Flag Ledger</button>
+            </div>
+
+            <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted)">Execution Console</h4>
+            <div class="console-box" id="console-output">Ready to transmit raw smuggling payloads to pipeline queue...</div>
+          </div>
+
+          <!-- TAB 2: Ledger -->
+          <div id="tab-ledger" class="tab-pane">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <p class="challenge-desc">
+                The back-end server exposes a ledger route at <code>GET /api/flag</code> which reports the smuggled segment cache. Once successfully processed, check the ledger to extract the flags.
+              </p>
+              <button class="btn btn-primary" onclick="checkCapturedFlag()" style="max-width: 250px;">Check Flag Ledger</button>
+              <div class="console-box" id="ledger-output">No ledger checks executed yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side: logger -->
+      <div class="logger-panel">
+        <div class="logger-header">
+          <span class="logger-title">HTTP Connection History</span>
+          <button class="btn btn-secondary" onclick="clearLogs()" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; border-radius: 4px;">Clear Logs</button>
+        </div>
+        <div class="logger-content" id="logs-container">
+          <div style="color: var(--text-muted)">Awaiting traffic connections...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStage = 1;
+    const templates = {
+      clte: `POST / HTTP/1.1
+Host: localhost:3000
+Content-Length: 90
+Transfer-Encoding: chunked
+
+0
+
+POST /api/capture HTTP/1.1
+Host: localhost
+Content-Length: 5
+
+x=123`,
+      tecl: `POST / HTTP/1.1
+Host: localhost:3000
+Content-Length: 4
+Transfer-Encoding: chunked
+
+5c
+POST /api/capture HTTP/1.1
+Host: localhost
+stage=2
+Content-Length: 40
+
+x=
+0
+
+`,
+      clcl: `POST / HTTP/1.1
+Host: localhost:3000
+Content-Length: 96
+Transfer-Encoding: chunked
+stage=3
+
+0
+
+POST /api/capture HTTP/1.1
+Host: localhost
+Content-Length: 5
+
+x=123`,
+      cache: `POST / HTTP/1.1
+Host: localhost:3000
+Content-Length: 96
+Transfer-Encoding: chunked
+stage=4
+
+0
+
+POST /api/capture HTTP/1.1
+Host: localhost
+Content-Length: 5
+
+x=123`
+    };
+
+    const stageDetails = {
+      1: {
+        title: "CL.TE Pipeline Deserialization",
+        complexity: "Easy",
+        desc: "The front-end proxy server relies on Content-Length to determine the boundary of incoming requests, while the back-end parser reads the Transfer-Encoding: chunked header. Construct a smuggling request sequence where the back-end leaves a complete next query segment inside the pipeline socket buffer."
+      },
+      2: {
+        title: "TE.CL Request Parsing Desync",
+        complexity: "Medium",
+        desc: "In this scenario, the front-end proxy uses Transfer-Encoding: chunked while the back-end only respects Content-Length. You need to smuggle a segment inside a chunked body structure that leaves the target endpoint GET /api/capture on the line buffer."
+      },
+      3: {
+        title: "CL.CL Header Conflict Parsing",
+        complexity: "Hard",
+        desc: "Both layers use Content-Length, but you supply duplicate Content-Length headers with distinct values, or insert a slight space. The proxy uses the first one; the backend uses the second one, misinterpreting the query stream boundaries. Set stage=3 query parameters to retrieve the flag."
+      },
+      4: {
+        title: "Smuggled Cache Poisoning Attack",
+        complexity: "Expert",
+        desc: "A highly expert vector. Poison the socket pool so the back-end maps a request to a previous client's smuggled cache state. Ensure you specify stage=4 in your stream headers."
+      }
+    };
+
+    function selectStage(num) {
+      currentStage = num;
+      document.querySelectorAll('.stage-card').forEach(c => c.classList.remove('active'));
+      document.getElementById(`stage-card-${num}`).classList.add('active');
+
+      const details = stageDetails[num];
+      document.getElementById('challenge-title').textContent = details.title;
+      document.getElementById('challenge-complexity').textContent = details.complexity;
+      document.getElementById('challenge-desc').textContent = details.desc;
+
+      // Update Template Selector auto option
+      const tSelect = document.getElementById('template-selector');
+      if (num === 1) tSelect.value = 'clte';
+      if (num === 2) tSelect.value = 'tecl';
+      if (num === 3) tSelect.value = 'clcl';
+      if (num === 4) tSelect.value = 'cache';
+      loadTemplate();
+    }
+
+    function loadTemplate() {
+      const select = document.getElementById('template-selector').value;
+      if (templates[select]) {
+        document.getElementById('raw-stream').value = templates[select];
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      
+      const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.toLowerCase().includes(tab));
+      if (targetBtn) targetBtn.classList.add('active');
+
+      const targetPane = document.getElementById(`tab-${tab}`);
+      if (targetPane) targetPane.classList.add('active');
+    }
+
+    async function sendSmugglePayload() {
+      const payload = document.getElementById('raw-stream').value;
+      const consoleBox = document.getElementById('console-output');
+      consoleBox.classList.remove('error');
+      consoleBox.textContent = "Transmitting raw TCP stream directly into the pipeline...";
+
+      try {
+        const res = await fetch('/', {
+          method: 'POST',
+          body: payload
+        });
+        const data = await res.json();
+        if (data.success) {
+          consoleBox.textContent = `[+] Smuggling status: Success\n[+] Server Response:\n${JSON.stringify(data, null, 2)}`;
+        } else {
+          consoleBox.classList.add('error');
+          consoleBox.textContent = `[-] Pipeline Error:\n${JSON.stringify(data, null, 2)}`;
+        }
+      } catch (err) {
+        consoleBox.classList.add('error');
+        consoleBox.textContent = "[!] Stream socket returned bad format or refused connection. This typically occurs in CL.TE desync responses, or if the server connection resets.";
+      }
+      setTimeout(refreshLogs, 1000);
+    }
+
+    async function checkCapturedFlag() {
+      const output = document.getElementById('ledger-output');
+      const consoleBox = document.getElementById('console-output');
+      
+      try {
+        const res = await fetch('/api/flag');
+        const data = await res.json();
+        
+        if (data.success && data.flag.startsWith("FLAG{")) {
+          output.innerHTML = `<span style="color: var(--success); font-weight: 700;">[+] Flag Retrieved!</span>\n\nFlag: <code style="color: #fff; background: rgba(255,255,255,0.1); padding: 0.25rem 0.5rem; border-radius: 4px;">${data.flag}</code>`;
+          consoleBox.innerHTML = `<span style="color: var(--success)">[+] Flag recovered: ${data.flag}</span>`;
+          
+          // Mark stage as solved based on active stage flag
+          localStorage.setItem(`stage_request_smuggling_${currentStage}_solved`, "true");
+          updateSolvedBadges();
+        } else {
+          output.textContent = `[-] Ledger is empty: ${data.flag}`;
+          consoleBox.textContent = `[-] Ledger check: ${data.flag}`;
+        }
+      } catch (err) {
+        output.textContent = "[!] Error polling API ledger.";
+      }
+    }
+
+    function updateSolvedBadges() {
+      for (let i = 1; i <= 4; i++) {
+        const solved = localStorage.getItem(`stage_request_smuggling_${i}_solved`) === 'true';
+        const badge = document.getElementById(`badge-${i}`);
+        const card = document.getElementById(`stage-card-${i}`);
+        if (badge) {
+          if (solved) {
+            badge.textContent = "Solved";
+            badge.className = "status-badge solved";
+            card.classList.add('solved');
+          } else {
+            badge.textContent = "Unsolved";
+            badge.className = "status-badge";
+            card.classList.remove('solved');
+          }
+        }
+      }
+    }
+
+    async function toggleShield() {
+      const shieldToggle = document.getElementById('shield-toggle');
+      const shieldLabel = document.getElementById('shield-label');
+      const shieldIndicator = document.getElementById('shield-indicator');
+      
+      const newMode = shieldLabel.textContent.includes("Vulnerable") ? "secure" : "vulnerable";
+      
+      try {
+        const res = await fetch('/api/settings/security-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: newMode })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          updateShieldUI(data.securityMode);
+        }
+      } catch (e) {
+        console.error("Error setting security mode:", e);
+      }
+    }
+
+    function updateShieldUI(mode) {
+      const shieldToggle = document.getElementById('shield-toggle');
+      const shieldLabel = document.getElementById('shield-label');
+      const shieldIndicator = document.getElementById('shield-indicator');
+      
+      if (mode === 'secure') {
+        shieldIndicator.className = "shield-status-indicator secure";
+        shieldLabel.textContent = "Shield: Secure Mode";
+        shieldToggle.className = "toggle-btn secure";
+      } else {
+        shieldIndicator.className = "shield-status-indicator";
+        shieldLabel.textContent = "Shield: Vulnerable";
+        shieldToggle.className = "toggle-btn";
+      }
+    }
+
+    async function getSettings() {
+      try {
+        const res = await fetch('/api/settings/security-mode');
+        const data = await res.json();
+        updateShieldUI(data.securityMode);
+      } catch (e) {
+        console.error("Error fetching settings:", e);
+      }
+    }
+
+    async function refreshLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const container = document.getElementById('logs-container');
+        
+        if (data.logs.length === 0) {
+          container.innerHTML = `<div style="color: var(--text-muted)">Awaiting traffic connections...</div>`;
+          return;
+        }
+
+        container.innerHTML = data.logs.slice().reverse().map(log => `
+          <div class="log-item">
+            <div class="log-meta">
+              <span>[${new Date(log.timestamp).toLocaleTimeString()}]</span>
+              <span class="log-status ${log.statusCode === 200 ? 'success' : 'error'}">${log.statusCode}</span>
+            </div>
+            <div>
+              <span class="log-method">${log.method}</span>
+              <span class="log-path">${log.path}</span>
+              <span style="float: right; color: var(--text-muted); font-size: 0.7rem;">${log.duration}</span>
+            </div>
+            ${log.securityMode === 'secure' ? `<div style="color: var(--danger); font-size: 0.7rem; margin-top: 0.1rem;">Pipeline Mismatch Filter Checked</div>` : ''}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error("Error fetching logs:", e);
+      }
+    }
+
+    async function clearLogs() {
+      try {
+        await fetch('/api/logs/clear', { method: 'POST' });
+        refreshLogs();
+      } catch (e) {
+        console.error("Error clearing logs:", e);
+      }
+    }
+
+    // Auto refresh
+    setInterval(refreshLogs, 3000);
+    
+    // Init
+    getSettings();
+    updateSolvedBadges();
+    refreshLogs();
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+
+
+
+
+
+
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 1. Fix branding ──
+  var brandIcon = document.querySelector('.brand-icon');
+  if (brandIcon && !brandIcon.textContent.trim()) brandIcon.textContent = 'HM';
+
+  var brand = document.querySelector('.brand');
+  if (brand && !brand.querySelector('.brand-title')) {
+    Array.from(brand.childNodes).forEach(function(n) {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = '';
+    });
+    var titleEl = document.createElement('div');
+    titleEl.className = 'brand-title';
+    titleEl.textContent = 'HackMeIfYouCan Portal';
+    titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
+    brand.appendChild(titleEl);
+  }
+
+  // ── 2. Detect layout type ──
+  var nativeAside = document.querySelector('aside');
+  var stageCards = document.querySelectorAll('.stage-card');
+  var stageBtns = document.querySelectorAll('.stage-btn');
+  var stages = stageCards.length > 0 ? stageCards : stageBtns;
+  var hasNativeSidebar = nativeAside && nativeAside.querySelector('.nav-list');
+
+  if (!hasNativeSidebar && stages.length === 0) return; // single-card lab, skip
+
+  // ── 3. Replace shield button with checkbox toggle ──
+  var oldShield = document.getElementById('shieldBtn') || document.querySelector('.shield-btn');
+  var headerEl = document.querySelector('header');
+  
+  // Check if header already has proper patch-control with checkbox
+  var existingPatch = headerEl ? headerEl.querySelector('.patch-control') : null;
+  var existingCheckbox = existingPatch ? existingPatch.querySelector('input[type="checkbox"]') : null;
+  
+  if (headerEl && !existingCheckbox) {
+    var patchControl = document.createElement('div');
+    patchControl.className = 'hm-patch-control';
+    patchControl.innerHTML = '<div class="hm-patch-label">REMEDIATION SHIELD</div>' +
+      '<div id="hm-shield-indicator" class="hm-shield-badge hm-shield-vulnerable">VULNERABLE</div>' +
+      '<label class="hm-patch-switch"><input type="checkbox" id="hm-security-checkbox"><span class="hm-patch-slider"></span></label>';
+
+    if (oldShield && oldShield.parentNode) {
+      oldShield.parentNode.replaceChild(patchControl, oldShield);
+    } else if (existingPatch) {
+      existingPatch.parentNode.replaceChild(patchControl, existingPatch);
+    } else {
+      headerEl.appendChild(patchControl);
+    }
+
+    var hmCheckbox = document.getElementById('hm-security-checkbox');
+    var hmIndicator = document.getElementById('hm-shield-indicator');
+
+    function hmSyncShield() {
+      fetch('/api/settings/security-mode')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.securityMode === 'secure') {
+            hmCheckbox.checked = true;
+            hmIndicator.textContent = 'SECURE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-secure';
+          } else {
+            hmCheckbox.checked = false;
+            hmIndicator.textContent = 'VULNERABLE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-vulnerable';
+          }
+        }).catch(function(){});
+    }
+
+    hmCheckbox.addEventListener('change', function() {
+      var mode = hmCheckbox.checked ? 'secure' : 'vulnerable';
+      fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).then(function() { hmSyncShield(); }).catch(function(){});
+    });
+
+    hmSyncShield();
+  } else if (existingCheckbox) {
+    // Existing patch control with checkbox — just hide old shield-btn if separate
+    if (oldShield && oldShield !== existingPatch) oldShield.style.display = 'none';
+    // Hide extra elements in header (badges etc) — keep only brand + patch
+    var headerChildren = headerEl.children;
+    for (var i = 0; i < headerChildren.length; i++) {
+      var child = headerChildren[i];
+      if (!child.classList.contains('brand') && !child.classList.contains('patch-control') &&
+          !child.classList.contains('hm-patch-control') && !child.querySelector('.patch-control')) {
+        // Hide extra divs that wrap badge + patch-control
+        if (child.querySelector('.patch-control')) continue;
+        if (child.classList.contains('badge')) child.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Build unified sidebar ──
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'hm-sidebar';
+  var navList = document.createElement('ul');
+  navList.className = 'nav-list';
+
+  if (hasNativeSidebar) {
+    // NATIVE: Convert existing nav-items
+    var existingNavItems = nativeAside.querySelectorAll('.nav-item');
+    existingNavItems.forEach(function(item, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (item.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      li.textContent = item.textContent.trim();
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        item.click(); // trigger original
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  } else {
+    // CONVERTED: Build from stage-cards/buttons
+    stages.forEach(function(stage, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (stage.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      var nameEl = stage.querySelector('.stage-name') || stage.querySelector('span:first-child');
+      var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+      var name = nameEl ? nameEl.textContent.trim() : ('Stage ' + (idx + 1));
+      var statusText = statusEl ? statusEl.textContent.trim() : 'UNSOLVED';
+      var isSolved = statusText.toUpperCase() === 'SOLVED';
+      li.innerHTML = name + '<span class="solve-tag ' + (isSolved ? 'solved' : 'unsolved') + '">' + statusText + '</span>';
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        stage.click();
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  }
+
+  sidebar.appendChild(navList);
+  sidebar.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && e.target === sidebar) {
+      sidebar.classList.toggle('active-menu');
+    }
+  });
+
+  // ── 5. Build workspace ──
+  var workspace = document.createElement('div');
+  workspace.className = 'hm-workspace';
+
+  if (hasNativeSidebar) {
+    // NATIVE: move the existing workspace/main content
+    var existingWorkspace = document.querySelector('.workspace') || document.querySelector('main');
+    if (existingWorkspace) {
+      // Clone all children into new workspace
+      while (existingWorkspace.firstChild) {
+        workspace.appendChild(existingWorkspace.firstChild);
+      }
+    }
+  } else {
+    // CONVERTED: gather panels
+    var mainEl = document.querySelector('main');
+    var containerEl = mainEl || document.querySelector('.container');
+    if (containerEl) {
+      var panels = containerEl.querySelectorAll('.panel, .logger-panel');
+      panels.forEach(function(panel) {
+        var clone = panel.cloneNode(true);
+        var sg = clone.querySelector('.stages-grid');
+        if (sg) sg.remove();
+        var sh = clone.querySelector('.stages-header');
+        if (sh) sh.remove();
+        var ss = clone.querySelector('.stage-selector');
+        if (ss) ss.remove();
+        workspace.appendChild(clone);
+      });
+      if (workspace.children.length === 0) {
+        Array.from(containerEl.children).forEach(function(child) {
+          if (child.tagName !== 'HEADER') workspace.appendChild(child.cloneNode(true));
+        });
+      }
+    }
+  }
+
+  // ── 6. Insert new layout ──
+  var newContainer = document.createElement('div');
+  newContainer.className = 'hm-converted-container';
+  newContainer.appendChild(sidebar);
+  newContainer.appendChild(workspace);
+
+  document.body.classList.add('hm-converted');
+
+  if (headerEl && headerEl.nextSibling) {
+    headerEl.parentNode.insertBefore(newContainer, headerEl.nextSibling);
+  } else {
+    document.body.appendChild(newContainer);
+  }
+
+  // ── 7. Observer for solve status sync ──
+  if (!hasNativeSidebar && stages.length > 0) {
+    var observer = new MutationObserver(function() {
+      stages.forEach(function(stage, idx) {
+        var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+        if (statusEl) {
+          var navItem = navList.querySelector('[data-stage-idx="' + idx + '"]');
+          if (navItem) {
+            var tag = navItem.querySelector('.solve-tag');
+            if (tag) {
+              var txt = statusEl.textContent.trim();
+              tag.textContent = txt;
+              tag.className = 'solve-tag ' + (txt.toUpperCase() === 'SOLVED' ? 'solved' : 'unsolved');
+            }
+          }
+        }
+      });
+    });
+    stages.forEach(function(stage) {
+      observer.observe(stage, { attributes: true, childList: true, subtree: true });
+    });
+  }
+})();
+</script>
+
+</body>
+
+</html>

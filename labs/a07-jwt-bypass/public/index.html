@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Stage JWT Security Laboratory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #000000;
+      --panel-bg: rgba(12, 12, 12, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --primary: #10b981;
+      --primary-glow: none;
+      --accent: #10b981;
+      --accent-glow: none;
+      --success: #10b981;
+      --success-glow: none;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      font-size: 20px;
+    }
+    
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #030712;
+      box-shadow: none;
+    }
+    
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--primary), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .patch-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 16px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+    }
+    
+    .patch-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.1);
+      transition: .3s;
+      border-radius: 24px;
+      border: 1px solid var(--glass-border);
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--success-glow);
+      border-color: var(--success);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: var(--success);
+      box-shadow: none;
+    }
+    
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr;
+      padding: 2rem;
+      gap: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    @media (min-width: 1200px) {
+      main {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+    
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .panel::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      opacity: 0.5;
+    }
+    
+    .stage-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .stage-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .stage-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+    
+    .stage-btn.active {
+      background: var(--primary-glow);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .stage-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    
+    .stage-badge.solved {
+      background: var(--success-glow);
+      color: var(--success);
+    }
+    
+    .stage-badge.unsolved {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+    }
+    
+    .stage-info {
+      background: rgba(56, 189, 248, 0.03);
+      border: 1px solid rgba(56, 189, 248, 0.1);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 1.5rem;
+      gap: 1.5rem;
+    }
+    
+    .tab {
+      padding: 8px 0;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+    
+    input, textarea, select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: none;
+    }
+    
+    .token-maker {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    
+    .token-maker h3 {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: #fff;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.5rem;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--primary));
+      color: #030712;
+      border: none;
+      padding: 0.8rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn:hover {
+      box-shadow: none;
+      opacity: 0.95;
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+    
+    .logger-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 500px;
+    }
+    
+    .logger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .logger-title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+    
+    .logger-terminal {
+      flex: 1;
+      background: #02040a;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 600px;
+    }
+    
+    .log-entry {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      padding-bottom: 8px;
+    }
+    
+    .log-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .log-method {
+      font-weight: bold;
+    }
+    
+    .log-method.GET { color: #10b981; }
+    .log-method.POST { color: #38bdf8; }
+    
+    .log-details {
+      word-break: break-all;
+      color: #fff;
+    }
+    
+    .log-section-title {
+      color: var(--primary);
+      font-size: 0.7rem;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+    
+    .log-block {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 2px;
+      white-space: pre-wrap;
+    }
+    
+    .token-viewer {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      word-break: break-all;
+    }
+    
+    .jwt-header { color: #ef4444; }
+    .jwt-payload { color: #a855f7; }
+    .jwt-signature { color: #10b981; }
+    
+    .result-alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      display: none;
+    }
+    
+    .result-alert.success {
+      background: var(--success-glow);
+      border: 1px solid var(--success);
+      color: #34d399;
+      display: block;
+    }
+    
+    .result-alert.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+      display: block;
+    }
+  
+    /* Mobile and Split-Screen Responsiveness */
+    @media (max-width: 1024px) {
+      header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+      .brand, .patch-control {
+        justify-content: center !important;
+        margin: 0 auto !important;
+      }
+      .container {
+        grid-template-columns: 1fr !important;
+        margin: 1rem auto !important;
+        gap: 1.5rem !important;
+      }
+      aside {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+      }
+      aside::before {
+        content: "☰ Menu (Select Lab Stage)" !important;
+        display: block !important;
+        padding: 0.75rem 1rem !important;
+        font-family: var(--font-sans) !important;
+        font-weight: bold !important;
+        color: var(--primary) !important;
+        text-align: center !important;
+      }
+      /* Hide all immediate children of aside except when active-menu is toggled */
+      aside > * {
+        display: none !important;
+      }
+      aside.active-menu > * {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        background: #000000 !important;
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 8px !important;
+        padding: 0.5rem !important;
+        gap: 6px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+      }
+      .sidebar-btn, aside a, aside button, .nav-item {
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+        background: rgba(255,255,255,0.02) !important;
+        border: 1px solid var(--glass-border) !important;
+        border-radius: 6px !important;
+        color: var(--text-muted) !important;
+      }
+      .sidebar-btn.active, .nav-item.active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      .dashboard-grid, .grid, .repeater-grid, .audit-grid, .forms-grid, .panel-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+  
+    /* Force Solid Black and Clean Tech Green theme & Zoom Typography */
+    :root {
+      --bg-color: #000000 !important;
+      --bg: #000000 !important;
+      --panel-bg: rgba(12, 12, 12, 0.95) !important;
+      --primary: #10b981 !important;
+      --accent: #10b981 !important;
+      --success: #10b981 !important;
+      --primary-rgb: 16, 185, 129 !important;
+      --success-rgb: 16, 185, 129 !important;
+    }
+    body {
+      background-color: #000000 !important;
+      background-image: none !important;
+      color: #f3f4f6 !important;
+      font-size: 20px !important;
+    }
+    p, li, td, th, form label {
+      font-size: 1.1rem !important;
+      line-height: 1.6 !important;
+    }
+    .subtitle, .patch-label, .shield-badge, .badge, .stat-label, .diff-badge, span {
+      font-size: 0.95rem !important;
+    }
+    pre, code, textarea {
+      font-size: 0.95rem !important;
+    }
+    a {
+      color: #10b981 !important;
+    }
+    /* Stop red/blue/purple glows and replace accent buttons with green theme */
+    .btn-primary, .button-primary, button[type="submit"], input[type="submit"] {
+      background: #10b981 !important;
+      color: #000000 !important;
+      border-color: #10b981 !important;
+    }
+    .btn-primary:hover, .button-primary:hover, button[type="submit"]:hover, input[type="submit"]:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+
+  
+
+
+
+/* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
+.hm-converted-container {
+  max-width: 95%;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  flex-grow: 1;
+  width: 100%;
+}
+.hm-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.hm-sidebar .nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hm-sidebar .nav-item {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.hm-sidebar .nav-item:hover {
+  background: rgba(255,255,255,0.03);
+  color: var(--text, #f3f4f6);
+}
+.hm-sidebar .nav-item.active {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+.hm-sidebar .nav-item .solve-tag {
+  margin-left: auto;
+  font-size: 0.6rem;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hm-sidebar .nav-item .solve-tag.solved { color: var(--success, #10b981); }
+.hm-sidebar .nav-item .solve-tag.unsolved { color: #f87171; }
+.hm-workspace {
+  background: var(--panel-bg, rgba(12, 12, 12, 0.95));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  min-height: 500px;
+}
+/* Patch control (reference style) */
+.hm-patch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+.hm-patch-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted, #9ca3af);
+}
+.hm-shield-badge {
+  font-size: 0.7rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.hm-shield-vulnerable {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.hm-shield-secure {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.hm-patch-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.hm-patch-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.hm-patch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #374151;
+  transition: .3s;
+  border-radius: 34px;
+}
+.hm-patch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: .3s;
+  border-radius: 50%;
+}
+.hm-patch-switch input:checked + .hm-patch-slider {
+  background-color: var(--success, #10b981);
+}
+.hm-patch-switch input:checked + .hm-patch-slider:before {
+  transform: translateX(22px);
+}
+
+/* Header fixes */
+header {
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+.brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+.brand-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: linear-gradient(135deg, var(--primary, #10b981), var(--accent, #10b981)) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  color: #030712 !important;
+  font-size: 0.8rem !important;
+  box-shadow: none !important;
+}
+.brand-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(to right, var(--primary, #10b981), #fff) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Hide old layout elements that get replaced by JS */
+body.hm-converted main,
+body.hm-converted > .container { display: none !important; }
+/* But show the new container */
+body.hm-converted .hm-converted-container { display: grid !important; }
+
+/* Hide old shield buttons when converted */
+body.hm-converted .shield-btn { display: none !important; }
+body.hm-converted header > .shield-btn { display: none !important; }
+
+/* Responsive: sidebar collapses on small screens */
+@media (max-width: 1024px) {
+  .hm-converted-container {
+    grid-template-columns: 1fr !important;
+    margin: 1rem auto !important;
+  }
+  .hm-sidebar {
+    position: relative !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+  .hm-sidebar::before {
+    content: "\2630  Menu (Select Lab Stage)" !important;
+    display: block !important;
+    padding: 0.75rem 1rem !important;
+    font-weight: bold !important;
+    color: var(--primary, #10b981) !important;
+    text-align: center !important;
+  }
+  .hm-sidebar .nav-list {
+    display: none !important;
+  }
+  .hm-sidebar.active-menu .nav-list {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: #000000 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    gap: 6px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  }
+}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">HM</div>
+      <div class="brand-title">HackMeIfYouCan Portal</div>
+    </div>
+    
+    <div class="patch-control">
+      <span class="patch-label" id="patch-status">Remediation Shield: OFF</span>
+      <label class="switch">
+        <input type="checkbox" id="remediation-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <div class="workspace">
+      
+      <div class="panel">
+        <div class="stage-selector">
+          <button class="stage-btn active" onclick="setStage(1)">
+            <span>Stage 1</span>
+            <span class="stage-badge unsolved" id="badge-1">Unsolved</span>
+          </button>
+          <button class="stage-btn" onclick="setStage(2)">
+            <span>Stage 2</span>
+            <span class="stage-badge unsolved" id="badge-2">Unsolved</span>
+          </button>
+          <button class="stage-btn" onclick="setStage(3)">
+            <span>Stage 3</span>
+            <span class="stage-badge unsolved" id="badge-3">Unsolved</span>
+          </button>
+          <button class="stage-btn" onclick="setStage(4)">
+            <span>Stage 4</span>
+            <span class="stage-badge unsolved" id="badge-4">Unsolved</span>
+          </button>
+        </div>
+
+        <div class="stage-info" id="stage-description">
+          <strong>Stage 1: Alg 'none' Bypass</strong><br>
+          The target server validates JWT signatures, but reads the algorithm from the token header. Forge an administrative token specifying the 'none' algorithm and access the administrative flag.
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" id="tab-guest-login" onclick="switchTab('login')">Guest Portal</div>
+          <div class="tab" id="tab-token-submit" onclick="switchTab('submit')">Token Verifier</div>
+          <div class="tab" id="tab-token-builder" onclick="switchTab('builder')">JWT Forge-Lab</div>
+        </div>
+
+        <!-- Tab Content: Guest Login -->
+        <div id="content-login">
+          <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            Log in as the standard 'guest' operator to obtain a valid template HS256 signature session token.
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="login-username" value="guest" readonly>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" value="guest" readonly>
+          </div>
+          <button class="btn" onclick="performLogin()">Generate Guest Token</button>
+        </div>
+
+        <!-- Tab Content: Token Submit -->
+        <div id="content-submit" style="display: none;">
+          <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            Submit your signed or forged JWT auth_token to retrieve the secret stage flag from the target administrator workspace.
+          </div>
+          <div class="form-group">
+            <label>Session Authorization Token (JWT)</label>
+            <textarea id="submit-token" rows="4" placeholder="header.payload.signature" style="font-family: var(--font-mono); font-size: 0.8rem;"></textarea>
+          </div>
+          <button class="btn" onclick="verifyAdminToken()">Submit Token to /api/admin/flag</button>
+          
+          <div id="result-box" class="result-alert"></div>
+        </div>
+
+        <!-- Tab Content: Token Builder -->
+        <div id="content-builder" style="display: none;">
+          <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted);">
+            Forge dynamic JWTs by customizing the header, payload, and signing keys.
+          </div>
+          
+          <div class="form-group">
+            <label>Header (JSON)</label>
+            <textarea id="build-header" rows="3" style="font-family: var(--font-mono); font-size: 0.8rem;">{
+  "alg": "HS256",
+  "typ": "JWT"
+}</textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Payload (JSON)</label>
+            <textarea id="build-payload" rows="4" style="font-family: var(--font-mono); font-size: 0.8rem;">{
+  "username": "guest",
+  "role": "guest",
+  "exp": 1900000000
+}</textarea>
+          </div>
+
+          <div class="form-group" id="build-secret-container">
+            <label>HS256 Secret Key (Used if alg is HS256)</label>
+            <input type="text" id="build-secret" value="s3cr3t_s1gn1ng_k3y_99" style="font-family: var(--font-mono);">
+          </div>
+
+          <div class="form-group" id="build-rs256-container" style="display: none;">
+            <label>RSA Private Key (PEM format for JWS Stage 4 signing)</label>
+            <textarea id="build-rsa-private" rows="6" style="font-family: var(--font-mono); font-size: 0.75rem;" placeholder="Click 'Generate RSA Keypair' below to generate one automatically..."></textarea>
+            <button class="btn btn-secondary" onclick="generateRSAKeyPair()" style="margin-top: 8px;">Generate RSA Keypair</button>
+          </div>
+
+          <button class="btn" onclick="forgeToken()" style="margin-top: 1rem;">Assemble & Sign Token</button>
+
+          <div class="token-viewer" id="forged-token-display" style="display: none;">
+            <div style="font-weight: bold; margin-bottom: 8px; color: var(--primary);">Compiled JWT:</div>
+            <span class="jwt-header" id="disp-hdr"></span>.<span class="jwt-payload" id="disp-pay"></span>.<span class="jwt-signature" id="disp-sig"></span>
+            <button class="btn btn-secondary" onclick="copyForgedToken()" style="margin-top: 12px; padding: 6px;">Use This Token</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right Column: Interactive Terminal Widget -->
+    <div class="logger-panel">
+      <div class="panel" style="flex: 1; display: flex; flex-direction: column; min-height: 500px;">
+        <div class="logger-header">
+          <div class="logger-title">HTTP Connection History Monitor</div>
+          <button class="btn btn-secondary" onclick="clearLogs()" style="width: auto; padding: 4px 12px; font-size: 0.75rem;">Clear Console</button>
+        </div>
+        <div class="logger-terminal" id="terminal-history">
+          <div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 2rem;">
+            No transactions captured. Perform operations or submit requests to populate connection log queue.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentStage = 1;
+    let activeTab = 'login';
+    let forgedTokenResult = '';
+
+    // Initialize badges and state
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSecurityMode();
+      updateBadges();
+      pollLogs();
+      setInterval(pollLogs, 3000);
+      
+      // Auto-set helper details based on stage selection
+      setStage(1);
+    });
+
+    function updateBadges() {
+      for (let i = 1; i <= 4; i++) {
+        const solved = localStorage.getItem(`stage_jwt_bypass_${i}_solved`);
+        const badge = document.getElementById(`badge-${i}`);
+        if (solved === 'true') {
+          badge.textContent = "Solved";
+          badge.className = "stage-badge solved";
+        } else {
+          badge.textContent = "Unsolved";
+          badge.className = "stage-badge unsolved";
+        }
+      }
+    }
+
+    async function loadSecurityMode() {
+      try {
+        const res = await fetch('/api/settings/security-mode');
+        const data = await res.json();
+        document.getElementById('remediation-toggle').checked = data.securityMode === 'secure';
+        document.getElementById('patch-status').textContent = `Remediation Shield: ${data.securityMode.toUpperCase()}`;
+      } catch (err) {
+        console.error("Failed to load security mode", err);
+      }
+    }
+
+    document.getElementById('remediation-toggle').addEventListener('change', async (e) => {
+      const mode = e.target.checked ? 'secure' : 'vulnerable';
+      try {
+        const res = await fetch('/api/settings/security-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        const data = await res.json();
+        document.getElementById('patch-status').textContent = `Remediation Shield: ${data.securityMode.toUpperCase()}`;
+      } catch (err) {
+        console.error("Failed to set security mode", err);
+      }
+    });
+
+    const stageDescriptions = {
+      1: `<strong>Stage 1: Alg 'none' Bypass (Easy)</strong><br>
+          The backend parses JWT tokens. If the algorithm inside the header specifies <code>none</code>, the signature signature is ignored. Forge a token where <code>"alg": "none"</code>, username/role is changed to <code>admin</code>, and signature is empty (do not forget the trailing dot!).`,
+      2: `<strong>Stage 2: Mixed-Case Alg 'none' Bypass (Medium)</strong><br>
+          The server blacklists the lowercase word "none", but fails to account for case variations! Forge an administrative token specifying the algorithm <code>nOnE</code> or <code>NoNe</code> to bypass the string filter.`,
+      3: `<strong>Stage 3: Weak HS256 Secret Brute Force (Hard)</strong><br>
+          The algorithm "none" is completely blacklisted here. The server signs guest tokens with HS256, but uses a weak, easily guessable secret. Brute force or guess the signature secret key, sign a custom role <code>admin</code> token, and submit it! (Clue: Common standard credentials or default development keywords like "secret123").`,
+      4: `<strong>Stage 4: Dynamic JWK Injection (Expert)</strong><br>
+          The server accepts the RS256 algorithm and verifies the signature using the JSON Web Key (JWK) parameter supplied directly inside the token header! Generate a custom RSA key pair, embed the public key parameters inside the JWT header's <code>jwk</code> field, sign the token using your private key, and authenticate.`
+    };
+
+    function setStage(stage) {
+      currentStage = stage;
+      
+      // Update buttons active class
+      const buttons = document.querySelectorAll('.stage-btn');
+      buttons.forEach((btn, index) => {
+        if (index + 1 === stage) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update descriptions
+      document.getElementById('stage-description').innerHTML = stageDescriptions[stage];
+
+      // Reset fields depending on stage
+      const secretInput = document.getElementById('build-secret');
+      const secretContainer = document.getElementById('build-secret-container');
+      const rs256Container = document.getElementById('build-rs256-container');
+      const buildHdr = document.getElementById('build-header');
+      const buildPay = document.getElementById('build-payload');
+
+      if (stage === 1) {
+        buildHdr.value = JSON.stringify({ "alg": "none", "typ": "JWT" }, null, 2);
+        buildPay.value = JSON.stringify({ "username": "admin", "role": "admin" }, null, 2);
+        secretContainer.style.display = 'none';
+        rs256Container.style.display = 'none';
+      } else if (stage === 2) {
+        buildHdr.value = JSON.stringify({ "alg": "NoNe", "typ": "JWT" }, null, 2);
+        buildPay.value = JSON.stringify({ "username": "admin", "role": "admin" }, null, 2);
+        secretContainer.style.display = 'none';
+        rs256Container.style.display = 'none';
+      } else if (stage === 3) {
+        buildHdr.value = JSON.stringify({ "alg": "HS256", "typ": "JWT" }, null, 2);
+        buildPay.value = JSON.stringify({ "username": "admin", "role": "admin" }, null, 2);
+        secretContainer.style.display = 'block';
+        rs256Container.style.display = 'none';
+        secretInput.value = 'secret123';
+      } else if (stage === 4) {
+        buildHdr.value = JSON.stringify({ "alg": "RS256", "typ": "JWT", "jwk": {} }, null, 2);
+        buildPay.value = JSON.stringify({ "username": "admin", "role": "admin" }, null, 2);
+        secretContainer.style.display = 'none';
+        rs256Container.style.display = 'block';
+      }
+
+      // Hide results when switching stages
+      const resBox = document.getElementById('result-box');
+      resBox.style.display = 'none';
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-guest-login').classList.toggle('active', tab === 'login');
+      document.getElementById('tab-token-submit').classList.toggle('active', tab === 'submit');
+      document.getElementById('tab-token-builder').classList.toggle('active', tab === 'builder');
+
+      document.getElementById('content-login').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('content-submit').style.display = tab === 'submit' ? 'block' : 'none';
+      document.getElementById('content-builder').style.display = tab === 'builder' ? 'block' : 'none';
+    }
+
+    // Dynamic Helpers
+    function base64urlEncode(str) {
+      return btoa(unescape(encodeURIComponent(str)))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+    }
+
+    // In-browser basic signature helpers for HS256 to allow forge operations on client-side!
+    async function signHS256(header64, payload64, secret) {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secret);
+      const messageData = encoder.encode(`${header64}.${payload64}`);
+
+      const key = await crypto.subtle.importKey(
+        "raw", keyData,
+        { name: "HMAC", hash: { name: "SHA-256" } },
+        false, ["sign"]
+      );
+
+      const signature = await crypto.subtle.sign("HMAC", key, messageData);
+      return btoa(String.fromCharCode(...new Uint8Array(signature)))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+    }
+
+    // Generating local RSA keys for Stage 4
+    let localRSAPrivateKey = null;
+    let localJWK = null;
+
+    async function generateRSAKeyPair() {
+      const keys = await crypto.subtle.generateKey(
+        {
+          name: "RSASSA-PKCS1-v1_5",
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: { name: "SHA-256" }
+        },
+        true,
+        ["sign", "verify"]
+      );
+
+      // Export private key to PEM to show in UI
+      const privateExport = await crypto.subtle.exportKey("pkcs8", keys.privateKey);
+      const pem = formatPEM(btoa(String.fromCharCode(...new Uint8Array(privateExport))), "PRIVATE KEY");
+      document.getElementById('build-rsa-private').value = pem;
+      localRSAPrivateKey = keys.privateKey;
+
+      // Export public key to JWK
+      const jwkExport = await crypto.subtle.exportKey("jwk", keys.publicKey);
+      localJWK = jwkExport;
+
+      // Inject JWK into Header JSON
+      const hdrBox = document.getElementById('build-header');
+      try {
+        const hdr = JSON.parse(hdrBox.value);
+        hdr.jwk = jwkExport;
+        hdrBox.value = JSON.stringify(hdr, null, 2);
+      } catch (e) {
+        console.error("Header is not valid JSON", e);
+      }
+    }
+
+    function formatPEM(b64, type) {
+      const lines = [];
+      lines.push(`-----BEGIN ${type}-----`);
+      for (let i = 0; i < b64.length; i += 64) {
+        lines.push(b64.substring(i, i + 64));
+      }
+      lines.push(`-----END ${type}-----`);
+      return lines.join('\n');
+    }
+
+    async function performLogin() {
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: 'guest',
+            password: 'guest',
+            stage: currentStage
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('submit-token').value = data.token;
+          switchTab('submit');
+          
+          const resBox = document.getElementById('result-box');
+          resBox.className = "result-alert success";
+          resBox.innerHTML = `<strong>Guest token generated successfully!</strong><br>Token loaded into token verifier. Switch to the Forge-Lab tab to view or modify details.`;
+          pollLogs();
+        } else {
+          alert("Login failed");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function forgeToken() {
+      const hdrVal = document.getElementById('build-header').value;
+      const payVal = document.getElementById('build-payload').value;
+
+      try {
+        const header = JSON.parse(hdrVal);
+        const payload = JSON.parse(payVal);
+
+        const hdr64 = base64urlEncode(JSON.stringify(header));
+        const pay64 = base64urlEncode(JSON.stringify(payload));
+
+        let sig64 = '';
+        const alg = (header.alg || '').toLowerCase();
+
+        if (alg === 'none') {
+          sig64 = '';
+        } else if (alg === 'hs256') {
+          const secret = document.getElementById('build-secret').value;
+          sig64 = await signHS256(hdr64, pay64, secret);
+        } else if (header.alg === 'RS256') {
+          if (!localRSAPrivateKey) {
+            alert("Please generate an RSA keypair first for RS256.");
+            return;
+          }
+          const encoder = new TextEncoder();
+          const messageData = encoder.encode(`${hdr64}.${pay64}`);
+          const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", localRSAPrivateKey, messageData);
+          sig64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+            .replace(/=/g, '')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_');
+        } else {
+          alert("Unsupported algorithm configured inside the Header.");
+          return;
+        }
+
+        forgedTokenResult = `${hdr64}.${pay64}.${sig64}`;
+        
+        document.getElementById('disp-hdr').textContent = hdr64;
+        document.getElementById('disp-pay').textContent = pay64;
+        document.getElementById('disp-sig').textContent = sig64;
+        document.getElementById('forged-token-display').style.display = 'block';
+
+      } catch (err) {
+        alert("Failed to compile token: " + err.message);
+      }
+    }
+
+    function copyForgedToken() {
+      document.getElementById('submit-token').value = forgedTokenResult;
+      switchTab('submit');
+    }
+
+    async function verifyAdminToken() {
+      const token = document.getElementById('submit-token').value.trim();
+      const resBox = document.getElementById('result-box');
+      
+      if (!token) {
+        resBox.className = "result-alert error";
+        resBox.textContent = "Please input a valid session token before attempting verification.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/flag?stage=${currentStage}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          resBox.className = "result-alert success";
+          resBox.innerHTML = `<strong>SUCCESS: Access Granted!</strong><br><strong>Flag:</strong> ${data.flag}<br><em>${data.message}</em>`;
+          
+          // Mark stage as solved locally
+          localStorage.setItem(`stage_jwt_bypass_${currentStage}_solved`, 'true');
+          updateBadges();
+        } else {
+          resBox.className = "result-alert error";
+          resBox.innerHTML = `<strong>ACCESS DENIED (Status ${res.status}):</strong><br>${data.error || 'Verification Failed'}`;
+        }
+        pollLogs();
+      } catch (err) {
+        resBox.className = "result-alert error";
+        resBox.textContent = "Verification request failed: " + err.message;
+      }
+    }
+
+    // Terminal Logger interaction
+    async function pollLogs() {
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        const terminal = document.getElementById('terminal-history');
+        
+        if (!data.logs || data.logs.length === 0) {
+          terminal.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem; text-align: center; margin-top: 2rem;">No transactions captured. Perform operations to view details.</div>`;
+          return;
+        }
+
+        terminal.innerHTML = data.logs.map(log => {
+          let reqHeaderStr = '';
+          try {
+            reqHeaderStr = Object.entries(log.headers).map(([k, v]) => `${k}: ${v}`).join('\n');
+          } catch(e){}
+
+          return `
+            <div class="log-entry">
+              <div class="log-meta">
+                <span class="log-method ${log.method}">${log.method}</span>
+                <span>${log.timestamp}</span>
+              </div>
+              <div class="log-details">
+                <strong>URL:</strong> ${log.url}
+              </div>
+              
+              <div class="log-section-title">Request Headers:</div>
+              <div class="log-block">${reqHeaderStr}</div>
+              
+              ${log.body ? `
+                <div class="log-section-title">Request Payload:</div>
+                <div class="log-block">${log.body}</div>
+              ` : ''}
+
+              <div class="log-section-title">Response Status: ${log.responseStatus}</div>
+              <div class="log-block">${log.responseBody}</div>
+            </div>
+          `;
+        }).reverse().join('');
+      } catch (err) {
+        console.error("Failed to fetch logs", err);
+      }
+    }
+
+    async function clearLogs() {
+      try {
+        await fetch('/api/logs/clear', { method: 'POST' });
+        pollLogs();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  </script>
+
+  <!-- Interactive Mobile Navigation Toggle -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aside = document.querySelector('aside');
+      if (aside) {
+        aside.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            aside.classList.toggle('active-menu');
+          }
+        });
+      }
+    });
+  </script>
+
+
+
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 1. Fix branding ──
+  var brandIcon = document.querySelector('.brand-icon');
+  if (brandIcon && !brandIcon.textContent.trim()) brandIcon.textContent = 'HM';
+
+  var brand = document.querySelector('.brand');
+  if (brand && !brand.querySelector('.brand-title')) {
+    Array.from(brand.childNodes).forEach(function(n) {
+      if (n.nodeType === 3 && n.textContent.trim()) n.textContent = '';
+    });
+    var titleEl = document.createElement('div');
+    titleEl.className = 'brand-title';
+    titleEl.textContent = 'HackMeIfYouCan Portal';
+    titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
+    brand.appendChild(titleEl);
+  }
+
+  // ── 2. Detect layout type ──
+  var nativeAside = document.querySelector('aside');
+  var stageCards = document.querySelectorAll('.stage-card');
+  var stageBtns = document.querySelectorAll('.stage-btn');
+  var stages = stageCards.length > 0 ? stageCards : stageBtns;
+  var hasNativeSidebar = nativeAside && nativeAside.querySelector('.nav-list');
+
+  if (!hasNativeSidebar && stages.length === 0) return; // single-card lab, skip
+
+  // ── 3. Replace shield button with checkbox toggle ──
+  var oldShield = document.getElementById('shieldBtn') || document.querySelector('.shield-btn');
+  var headerEl = document.querySelector('header');
+  
+  // Check if header already has proper patch-control with checkbox
+  var existingPatch = headerEl ? headerEl.querySelector('.patch-control') : null;
+  var existingCheckbox = existingPatch ? existingPatch.querySelector('input[type="checkbox"]') : null;
+  
+  if (headerEl && !existingCheckbox) {
+    var patchControl = document.createElement('div');
+    patchControl.className = 'hm-patch-control';
+    patchControl.innerHTML = '<div class="hm-patch-label">REMEDIATION SHIELD</div>' +
+      '<div id="hm-shield-indicator" class="hm-shield-badge hm-shield-vulnerable">VULNERABLE</div>' +
+      '<label class="hm-patch-switch"><input type="checkbox" id="hm-security-checkbox"><span class="hm-patch-slider"></span></label>';
+
+    if (oldShield && oldShield.parentNode) {
+      oldShield.parentNode.replaceChild(patchControl, oldShield);
+    } else if (existingPatch) {
+      existingPatch.parentNode.replaceChild(patchControl, existingPatch);
+    } else {
+      headerEl.appendChild(patchControl);
+    }
+
+    var hmCheckbox = document.getElementById('hm-security-checkbox');
+    var hmIndicator = document.getElementById('hm-shield-indicator');
+
+    function hmSyncShield() {
+      fetch('/api/settings/security-mode')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.securityMode === 'secure') {
+            hmCheckbox.checked = true;
+            hmIndicator.textContent = 'SECURE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-secure';
+          } else {
+            hmCheckbox.checked = false;
+            hmIndicator.textContent = 'VULNERABLE';
+            hmIndicator.className = 'hm-shield-badge hm-shield-vulnerable';
+          }
+        }).catch(function(){});
+    }
+
+    hmCheckbox.addEventListener('change', function() {
+      var mode = hmCheckbox.checked ? 'secure' : 'vulnerable';
+      fetch('/api/settings/security-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+      }).then(function() { hmSyncShield(); }).catch(function(){});
+    });
+
+    hmSyncShield();
+  } else if (existingCheckbox) {
+    // Existing patch control with checkbox — just hide old shield-btn if separate
+    if (oldShield && oldShield !== existingPatch) oldShield.style.display = 'none';
+    // Hide extra elements in header (badges etc) — keep only brand + patch
+    var headerChildren = headerEl.children;
+    for (var i = 0; i < headerChildren.length; i++) {
+      var child = headerChildren[i];
+      if (!child.classList.contains('brand') && !child.classList.contains('patch-control') &&
+          !child.classList.contains('hm-patch-control') && !child.querySelector('.patch-control')) {
+        // Hide extra divs that wrap badge + patch-control
+        if (child.querySelector('.patch-control')) continue;
+        if (child.classList.contains('badge')) child.style.display = 'none';
+      }
+    }
+  }
+
+  // ── 4. Build unified sidebar ──
+  var sidebar = document.createElement('aside');
+  sidebar.className = 'hm-sidebar';
+  var navList = document.createElement('ul');
+  navList.className = 'nav-list';
+
+  if (hasNativeSidebar) {
+    // NATIVE: Convert existing nav-items
+    var existingNavItems = nativeAside.querySelectorAll('.nav-item');
+    existingNavItems.forEach(function(item, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (item.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      li.textContent = item.textContent.trim();
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        item.click(); // trigger original
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  } else {
+    // CONVERTED: Build from stage-cards/buttons
+    stages.forEach(function(stage, idx) {
+      var li = document.createElement('li');
+      li.className = 'nav-item' + (stage.classList.contains('active') ? ' active' : '');
+      li.setAttribute('data-stage-idx', idx);
+      var nameEl = stage.querySelector('.stage-name') || stage.querySelector('span:first-child');
+      var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+      var name = nameEl ? nameEl.textContent.trim() : ('Stage ' + (idx + 1));
+      var statusText = statusEl ? statusEl.textContent.trim() : 'UNSOLVED';
+      var isSolved = statusText.toUpperCase() === 'SOLVED';
+      li.innerHTML = name + '<span class="solve-tag ' + (isSolved ? 'solved' : 'unsolved') + '">' + statusText + '</span>';
+      li.addEventListener('click', function() {
+        navList.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        li.classList.add('active');
+        stage.click();
+        if (window.innerWidth <= 1024) sidebar.classList.remove('active-menu');
+      });
+      navList.appendChild(li);
+    });
+  }
+
+  sidebar.appendChild(navList);
+  sidebar.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && e.target === sidebar) {
+      sidebar.classList.toggle('active-menu');
+    }
+  });
+
+  // ── 5. Build workspace ──
+  var workspace = document.createElement('div');
+  workspace.className = 'hm-workspace';
+
+  if (hasNativeSidebar) {
+    // NATIVE: move the existing workspace/main content
+    var existingWorkspace = document.querySelector('.workspace') || document.querySelector('main');
+    if (existingWorkspace) {
+      // Clone all children into new workspace
+      while (existingWorkspace.firstChild) {
+        workspace.appendChild(existingWorkspace.firstChild);
+      }
+    }
+  } else {
+    // CONVERTED: gather panels
+    var mainEl = document.querySelector('main');
+    var containerEl = mainEl || document.querySelector('.container');
+    if (containerEl) {
+      var panels = containerEl.querySelectorAll('.panel, .logger-panel');
+      panels.forEach(function(panel) {
+        var clone = panel.cloneNode(true);
+        var sg = clone.querySelector('.stages-grid');
+        if (sg) sg.remove();
+        var sh = clone.querySelector('.stages-header');
+        if (sh) sh.remove();
+        var ss = clone.querySelector('.stage-selector');
+        if (ss) ss.remove();
+        workspace.appendChild(clone);
+      });
+      if (workspace.children.length === 0) {
+        Array.from(containerEl.children).forEach(function(child) {
+          if (child.tagName !== 'HEADER') workspace.appendChild(child.cloneNode(true));
+        });
+      }
+    }
+  }
+
+  // ── 6. Insert new layout ──
+  var newContainer = document.createElement('div');
+  newContainer.className = 'hm-converted-container';
+  newContainer.appendChild(sidebar);
+  newContainer.appendChild(workspace);
+
+  document.body.classList.add('hm-converted');
+
+  if (headerEl && headerEl.nextSibling) {
+    headerEl.parentNode.insertBefore(newContainer, headerEl.nextSibling);
+  } else {
+    document.body.appendChild(newContainer);
+  }
+
+  // ── 7. Observer for solve status sync ──
+  if (!hasNativeSidebar && stages.length > 0) {
+    var observer = new MutationObserver(function() {
+      stages.forEach(function(stage, idx) {
+        var statusEl = stage.querySelector('.stage-status') || stage.querySelector('.stage-badge');
+        if (statusEl) {
+          var navItem = navList.querySelector('[data-stage-idx="' + idx + '"]');
+          if (navItem) {
+            var tag = navItem.querySelector('.solve-tag');
+            if (tag) {
+              var txt = statusEl.textContent.trim();
+              tag.textContent = txt;
+              tag.className = 'solve-tag ' + (txt.toUpperCase() === 'SOLVED' ? 'solved' : 'unsolved');
+            }
+          }
+        }
+      });
+    });
+    stages.forEach(function(stage) {
+      observer.observe(stage, { attributes: true, childList: true, subtree: true });
+    });
+  }
+})();
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,1 @@
+FLAG{xxe_svg_upload_exploitation}

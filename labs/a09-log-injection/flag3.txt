@@ -1,0 +1,1 @@
+FLAG{php_session_file_poisoning}

@@ -1,0 +1,1 @@
+FLAG{cors_origin_credential_leak}
