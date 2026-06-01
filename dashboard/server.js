@@ -40,6 +40,9 @@ app.get('/api/labs', async (req, res) => {
       let isRunning = false;
       if (docker) {
         isRunning = await getContainerStatus(lab.containerName);
+      } else {
+        // Single-container / Render mode: all labs are managed by PM2 and always running
+        isRunning = true;
       }
       // Keep db file state in sync
       if (lab.active !== isRunning) {

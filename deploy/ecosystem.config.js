@@ -81,13 +81,12 @@ module.exports = {
     },
     {
         "name": "a03-ssti",
-        "script": "server.js",
+        "script": "app.py",
         "cwd": "/app/labs/a03-ssti",
         "env": {
-            "PORT": "30008",
-            "NODE_ENV": "production"
+            "PORT": "30008"
         },
-        "interpreter": "node"
+        "interpreter": "/app/labs/a03-ssti/venv/bin/python3"
     },
     {
         "name": "a04-insecure-design",
@@ -101,13 +100,12 @@ module.exports = {
     },
     {
         "name": "a05-xxe",
-        "script": "server.js",
+        "script": "app.py",
         "cwd": "/app/labs/a05-xxe",
         "env": {
-            "PORT": "30010",
-            "NODE_ENV": "production"
+            "PORT": "30010"
         },
-        "interpreter": "node"
+        "interpreter": "/app/labs/a05-xxe/venv/bin/python3"
     },
     {
         "name": "a06-outdated-components",
@@ -144,10 +142,9 @@ module.exports = {
         "script": "php",
         "cwd": "/app/labs/a09-log-injection",
         "env": {
-            "PORT": "30015",
-            "NODE_ENV": "production"
+            "PORT": "30015"
         },
-        "args": "-S 127.0.0.1:30015"
+        "args": "-S 0.0.0.0:30015 -t /app/labs/a09-log-injection"
     },
     {
         "name": "a10-ssrf",
@@ -251,13 +248,12 @@ module.exports = {
     },
     {
         "name": "a03-ldap",
-        "script": "server.js",
+        "script": "app.py",
         "cwd": "/app/labs/a03-ldap",
         "env": {
-            "PORT": "30026",
-            "NODE_ENV": "production"
+            "PORT": "30026"
         },
-        "interpreter": "node"
+        "interpreter": "/app/labs/a03-ldap/venv/bin/python3"
     },
     {
         "name": "a03-second-order",
@@ -274,8 +270,7 @@ module.exports = {
         "script": "app.py",
         "cwd": "/app/labs/a03-xpath",
         "env": {
-            "PORT": "30028",
-            "NODE_ENV": "production"
+            "PORT": "30028"
         },
         "interpreter": "/app/labs/a03-xpath/venv/bin/python3"
     },

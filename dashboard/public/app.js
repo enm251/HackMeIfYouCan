@@ -207,9 +207,7 @@ function renderLabs() {
     const activeClass = lab.active ? 'active' : '';
     const statusText = lab.active ? 'RUNNING' : 'STOPPED';
     
-    const hostPort = window.location.hostname;
-    const usePortBased = window.location.port && window.location.port !== "80" && window.location.port !== "443";
-    const labUrl = usePortBased ? `http://${hostPort}:${lab.port}` : `/lab/${lab.id}/`;
+    const labUrl = `/lab/${lab.id}/`;
 
     let actionButtons = '';
     if (lab.active) {
