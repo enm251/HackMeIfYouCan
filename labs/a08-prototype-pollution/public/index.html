@@ -557,6 +557,8 @@ header {
 
 
 
+
+
 /* === UNIFIED SIDEBAR LAYOUT (matches a01-idor) === */
 .hm-converted-container {
   max-width: 95%;
@@ -1023,6 +1025,9 @@ body.hm-converted header > .shield-btn { display: none !important; }
 
 
 
+
+
+
 <script>
 (function() {
   'use strict';
@@ -1041,6 +1046,16 @@ body.hm-converted header > .shield-btn { display: none !important; }
     titleEl.textContent = 'HackMeIfYouCan Portal';
     titleEl.style.cssText = 'font-size:20px;font-weight:700;background:linear-gradient(to right,var(--primary,#10b981),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
     brand.appendChild(titleEl);
+  }
+
+  if (brand) {
+    brand.style.cursor = 'pointer';
+    var dashboardUrl = window.location.port && window.location.port !== '80' && window.location.port !== '443'
+      ? 'http://' + window.location.hostname + ':3000'
+      : '/';
+    brand.addEventListener('click', function() {
+      window.location.href = dashboardUrl;
+    });
   }
 
   // ── 2. Detect layout type ──
