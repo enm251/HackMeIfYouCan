@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Generate RSA Key Pair at startup dynamically
 const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {

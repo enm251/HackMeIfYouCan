@@ -1380,4 +1380,4 @@ def fetch():
         return jsonify({"success": False, "error": f"Failed to fetch resource: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    public_app.run(host='0.0.0.0', port=3000)
+    public_app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 3000)))

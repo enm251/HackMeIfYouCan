@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, render_template, jsonify
 from lxml import etree
 import sys
@@ -142,4 +143,4 @@ def stage4_parse():
         return jsonify({"success": False, "error": f"SVG Vector Parse Error: {str(e)}"}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 3000)), debug=True)

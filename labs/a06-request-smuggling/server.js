@@ -61,7 +61,7 @@ app.listen(3001, () => {
 });
 
 // A raw TCP proxy server simulating Smuggling mismatch vulnerabilities
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const server = net.createServer((socket) => {
   socket.on('data', (data) => {
