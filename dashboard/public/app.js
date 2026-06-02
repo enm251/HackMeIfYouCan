@@ -206,8 +206,9 @@ function renderLabs() {
     // Create status template
     const activeClass = lab.active ? 'active' : '';
     const statusText = lab.active ? 'RUNNING' : 'STOPPED';
-    
-    const labUrl = `/lab/${lab.id}/`;
+    const labUrl = window.location.port === '3000'
+      ? `http://${window.location.hostname}:${lab.port}/`
+      : `/lab/${lab.id}/`;
 
     let actionButtons = '';
     if (lab.active) {
