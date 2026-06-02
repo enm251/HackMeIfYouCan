@@ -21,3 +21,11 @@ __pycache__/
 # Docker logs
 *.log
 .system_generated/
+
+# Antigravity / Workspace helper files
+task.md
+walkthrough.md
+implementation_plan.md
+skills.md
+verify_labs.js
+
